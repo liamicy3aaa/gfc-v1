@@ -1,0 +1,82 @@
+[30-Jun-2019 20:56:18 UTC] PHP Fatal error:  Uncaught exception 'RuntimeException' with message 'Layout template `../layout.phtml` does not exist' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php:98
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php(59): Slim\Views\PhpRenderer->setLayout('../layout.phtml')
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(10): require('/home/u43421864...')
+#2 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php on line 98
+[30-Jun-2019 20:56:45 UTC] PHP Fatal error:  Uncaught exception 'RuntimeException' with message 'Layout template `../layout.phtml` does not exist' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php:98
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php(59): Slim\Views\PhpRenderer->setLayout('../layout.phtml')
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(10): require('/home/u43421864...')
+#2 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php on line 98
+[30-Jun-2019 20:56:47 UTC] PHP Fatal error:  Uncaught exception 'RuntimeException' with message 'Layout template `../layout.phtml` does not exist' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php:98
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php(59): Slim\Views\PhpRenderer->setLayout('../layout.phtml')
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(10): require('/home/u43421864...')
+#2 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php on line 98
+[30-Jun-2019 20:56:48 UTC] PHP Fatal error:  Uncaught exception 'RuntimeException' with message 'Layout template `../layout.phtml` does not exist' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php:98
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php(59): Slim\Views\PhpRenderer->setLayout('../layout.phtml')
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(10): require('/home/u43421864...')
+#2 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php on line 98
+[30-Jun-2019 20:56:48 UTC] PHP Fatal error:  Uncaught exception 'RuntimeException' with message 'Layout template `../layout.phtml` does not exist' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php:98
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php(59): Slim\Views\PhpRenderer->setLayout('../layout.phtml')
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(10): require('/home/u43421864...')
+#2 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php on line 98
+[30-Jun-2019 20:56:48 UTC] PHP Fatal error:  Uncaught exception 'RuntimeException' with message 'Layout template `../layout.phtml` does not exist' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php:98
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php(59): Slim\Views\PhpRenderer->setLayout('../layout.phtml')
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(10): require('/home/u43421864...')
+#2 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/php-view/src/PhpRenderer.php on line 98
+[01-Jul-2019 14:59:32 UTC] PHP Fatal error:  Uncaught exception 'Slim\Exception\NotFoundException' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php:526
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/MiddlewareAwareTrait.php(117): Slim\App->__invoke(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(405): Slim\App->callMiddlewareStack(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#2 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(313): Slim\App->process(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#3 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(23): Slim\App->run()
+#4 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php on line 526
+[01-Jul-2019 15:00:33 UTC] PHP Fatal error:  Uncaught exception 'Slim\Exception\NotFoundException' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php:526
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/MiddlewareAwareTrait.php(117): Slim\App->__invoke(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(405): Slim\App->callMiddlewareStack(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#2 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(313): Slim\App->process(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#3 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(23): Slim\App->run()
+#4 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php on line 526
+[01-Jul-2019 15:00:34 UTC] PHP Fatal error:  Uncaught exception 'Slim\Exception\NotFoundException' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php:526
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/MiddlewareAwareTrait.php(117): Slim\App->__invoke(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(405): Slim\App->callMiddlewareStack(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#2 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(313): Slim\App->process(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#3 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(23): Slim\App->run()
+#4 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php on line 526
+[01-Jul-2019 15:00:34 UTC] PHP Fatal error:  Uncaught exception 'Slim\Exception\NotFoundException' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php:526
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/MiddlewareAwareTrait.php(117): Slim\App->__invoke(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(405): Slim\App->callMiddlewareStack(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#2 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(313): Slim\App->process(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#3 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(23): Slim\App->run()
+#4 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php on line 526
+[01-Jul-2019 15:00:35 UTC] PHP Fatal error:  Uncaught exception 'Slim\Exception\NotFoundException' in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php:526
+Stack trace:
+#0 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/MiddlewareAwareTrait.php(117): Slim\App->__invoke(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#1 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(405): Slim\App->callMiddlewareStack(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#2 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php(313): Slim\App->process(Object(Slim\Http\Request), Object(Slim\Http\Response))
+#3 /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/public/index.php(23): Slim\App->run()
+#4 {main}
+  thrown in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/vendor/slim/slim/Slim/App.php on line 526
+[01-Jul-2019 15:01:42 UTC] PHP Fatal error:  Using $this when not in object context in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php on line 81
+[01-Jul-2019 15:02:02 UTC] PHP Notice:  Undefined variable: app in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php on line 81
+[01-Jul-2019 15:02:02 UTC] PHP Notice:  Trying to get property of non-object in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php on line 81
+[01-Jul-2019 15:02:02 UTC] PHP Fatal error:  Call to a member function render() on null in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php on line 81
+[01-Jul-2019 15:02:25 UTC] PHP Notice:  Undefined variable: container in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php on line 81
+[01-Jul-2019 15:02:25 UTC] PHP Fatal error:  Call to a member function render() on null in /home/u434218648/domains/gadgetfreak.co.uk/public_html/gfc/app/app.php on line 81

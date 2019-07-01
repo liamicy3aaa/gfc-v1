@@ -1,0 +1,67 @@
+.btn-underline {
+         
+    border: none;
+    border-bottom: 2px solid;
+    border-radius: 0;
+    border-color: #eaeaea;
+    color: #999;
+
+}
+
+.btn-underline-round {
+    
+    border-radius: 30px;
+    
+}
+
+.btn-underline:hover {
+
+    border-bottom: 2px solid #007bff;
+    background-color: transparent;
+    color:#007bff;
+    transition: all 300ms ease-in-out;
+
+}
+
+.btn-underline.active {
+    
+    border-color: #007bff;
+    color:#007bff !important;
+    background-color: transparent !important;
+    
+}
+
+.img-round-corner {
+    
+    border-radius: 5px;
+    
+}
+
+.film-certificate {
+    
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 25px;
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin-left: 5px;
+    text-align: center;
+    letter-spacing: 0;
+    color: #fff;
+    border-radius: 50%;
+    background: #4a4a4a;
+    
+}
+
+@media (max-width: 767px) {
+    
+    .film-thumb {
+        
+        max-height:342px;
+        
+    }
+    
+    
+    
+}
