@@ -1,0 +1,43 @@
+.screen-seat {
+
+    font-size:12px;
+    text-align: center;
+
+
+}
+
+.seat-standard {
+
+    max-width:30px;
+    max-height:30px;
+
+}
+
+.seat-double {
+
+    max-width:60px;
+    max-height:30px;
+
+}
+
+.screen {
+    border-spacing: 5px 10px;
+    border-collapse: separate;
+
+}
+
+.screen-container {
+
+    overflow-x: scroll;
+
+}
+
+@media only screen and (max-width: 700px) {
+
+    .screen-container {
+
+        transform: scale(0.9);
+
+    }
+
+}

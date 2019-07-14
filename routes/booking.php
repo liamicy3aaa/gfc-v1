@@ -23,6 +23,54 @@ $app->group("/booking", function(){
 
     });
 
+    $this->get("/new/tickets", function($request, $response, $args) {
+
+        return $response = $this->view->render($response, "/booking/ticket_selection.phtml", ["_title" => "test tickets"]);
+
+    });
+
+    $this->get("/new/seats", function($request, $response, $args) {
+
+        $alpha = range("A", "Z");
+        $count = 0;
+        $html = "";
+
+        while($count < 8) {
+
+            $secondary = 0;
+            $letter = $alpha[$count];
+
+
+            $html .= "<tr class='screen-row'>";
+
+                while($secondary < 10) {
+
+                    $value = ((rand(0,1) == 1) ? "GREEN" : "GREY");
+
+                    $html .= "<td class='screen-seat seat-standard'>";
+
+                        $html .= "<img src='https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_" . $value . ".png'/>";
+
+                        $html .= "<br/>";
+
+                        $html .= $letter . ($secondary + 1);
+
+                    $html .= "</td>";
+
+                    $secondary++;
+
+                }
+
+            $html .= "</tr>";
+
+            $count++;
+        }
+
+        return $response = $this->view->render($response, "/booking/seat_selection.phtml", ["_title" => "test seats", "seats" => $html]);
+
+
+    });
+
 
 
 });

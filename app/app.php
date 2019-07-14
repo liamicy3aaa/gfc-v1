@@ -1,5 +1,5 @@
 <?php
-
+session_name("GFC-AUTH");
 session_start();
 date_default_timezone_set("Europe/London");
 
