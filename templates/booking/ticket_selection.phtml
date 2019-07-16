@@ -13,3 +13,99 @@ text-shadow:4px 2px 4px black;">
         <a class='text-white pt-5' href="/">< Back to what's on</a>
     </div>
 </div>
+<div class="container container-fluid mb-5">
+    <div class="mx-auto stepwizard col-md-offset-3">
+        <div class="stepwizard-row setup-panel">
+            <div class="stepwizard-step">
+                <a href="#step-1" class="btn btn-primary btn-circle">1</a>
+                <p>Select tickets</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-2" class="btn btn-secondary btn-circle" disabled="disabled">2</a>
+                <p>Select seats</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-3" class="btn btn-secondary btn-circle" disabled="disabled">3</a>
+                <p>Enter details</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-4" class="btn btn-secondary btn-circle" disabled="disabled">4</a>
+                <p>Review basket</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <p>Please select tickets for:</p>
+            <p style="font-weight:bold;">Rocketman (15) at 10:30 on MONDAY 10TH JULY 2019 showing in Screen 1</p>
+            <p style="font-weight:bold;">Available seats: <span>24</span></p>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <th>Selection</th>
+                    <th class="text-right">Price</th>
+                    <th>Qty</th>
+                    <th class="d-none d-sm-table-cell text-right">Subtotal</th>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="col-8 col-sm-10 col-md-9">Adult</td>
+                        <td class="col-1 col-sm-1 col-md-1 text-right">&pound;8.00</td>
+                        <td class="col-3 col-sm-1 col-md-2 text-right">
+                            <select class="form-control input-sm" style="width:65px;">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </td>
+                        <td class="col-1 col-md-1 text-right d-none d-sm-table-cell"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-8 col-sm-10 col-md-9">Child
+                            <div>
+                                <small class="text-secondary">Proof of entitlement may be required</small>
+                            </div>
+                        </td>
+                        <td class="col-1 col-sm-1 col-md-1 text-right">&pound;6.00</td>
+                        <td class="col-3 col-sm-1 col-md-2 text-right">
+                            <select class="form-control input-sm" style="width:65px;">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </td>
+                        <td class="col-1 col-md-1 text-right d-none d-sm-table-cell"></td>
+                    </tr>
+                    <tr>
+                        <td class="col-8 col-sm-10 col-md-9">Concession/OAP
+                            <div>
+                                <small class="text-secondary">Proof of entitlement may be required</small>
+                            </div>
+                        </td>
+                        <td class="col-1 col-sm-1 col-md-1 text-right">&pound;7.00</td>
+                        <td class="col-3 col-sm-1 col-md-2 text-right">
+                            <select class="form-control input-sm" style="width:65px;">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </td>
+                        <td class="col-1 col-md-1 text-right d-none d-sm-table-cell"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <strong>2 tickets selected at a total cost of &pound;14.00</strong>
+        </div>
+    </div>
+        <a href="/booking/new/seats" class="btn btn-block text-center mt-2 p-3 btn-outline-secondary">Next</a>
+</div>

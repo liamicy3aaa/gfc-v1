@@ -29,6 +29,20 @@ $app->group("/booking", function(){
 
     });
 
+    $this->get("/new/db", function($request, $response, $args) {
+
+        $conn = $this->get("db");
+
+        $r = $conn->query("SELECT * FROM gfc_films")->fetchAll();
+
+        print "<pre>"; print_r($r); print "</pre>";
+
+        $conn->close();
+
+        exit;
+
+    });
+
     $this->get("/new/seats", function($request, $response, $args) {
 
         $alpha = range("A", "Z");

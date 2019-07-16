@@ -1,61 +1,92 @@
 <head>
     <link rel="stylesheet" href="/assets/css/seat_layout.css">
 </head>
-    <div class="screen-container text-center mx-auto my-3 m-0 m-md-5">
-        <h1>Select your seat</h1>
-        <table class="screen mx-auto">
-            <tbody>
-            <?php print $data["seats"]; ?>
-            <tr class="screen-row">
-                <td colspan='10' style="border:1px solid lightgrey; width:100%;" class="text-center p-1">SCREEN</td>
-            </tr>
-                <!--<tr class="screen-row">
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A1
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A2
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A3
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A4
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A5
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A6
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A7
-                    </td>
-                    <td class="screen-seat seat-double">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/2-seat_GREY.png"/>
-                        <br/>
-                        A8,9
-                    </td>
-                    <td class="screen-seat seat-standard">
-                        <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
-                        <br/>
-                        A10
-                    </td>
-                </tr>-->
-            </tbody>
-        </table>
+    <div class="container container-fluid my-5">
+        <div class="mx-auto stepwizard col-md-offset-3">
+            <div class="stepwizard-row setup-panel">
+                <div class="stepwizard-step">
+                    <a href="#step-1" class="btn btn-success btn-circle">1</a>
+                    <p>Select tickets</p>
+                </div>
+                <div class="stepwizard-step">
+                    <a href="#step-2" class="btn btn-primary btn-circle" disabled="disabled">2</a>
+                    <p>Select seats</p>
+                </div>
+                <div class="stepwizard-step">
+                    <a href="#step-3" class="btn btn-secondary btn-circle" disabled="disabled">3</a>
+                    <p>Enter details</p>
+                </div>
+                <div class="stepwizard-step">
+                    <a href="#step-4" class="btn btn-secondary btn-circle" disabled="disabled">4</a>
+                    <p>Review basket</p>
+                </div>
+            </div>
+        </div>
+
+    <div class="card">
+        <div class="card-header">
+            <p>Please select your seats for:</p>
+            <p style="font-weight:bold;">Rocketman (15) at 10:30 on MONDAY 10TH JULY 2019 showing in Screen 1</p>
+            <p style="font-weight:bold;">Available seats: <span>24</span></p>
+        </div>
+        <div class="card-body">
+            <div class="screen-container text-center mx-auto m-0 m-md-5">
+                <h1>Select your seat</h1>
+                <table class="screen mx-auto">
+                    <tbody>
+                    <?php print $data["seats"]; ?>
+                    <tr class="screen-row">
+                        <td colspan='10' style="border:1px solid lightgrey; width:100%;" class="text-center p-1">SCREEN</td>
+                    </tr>
+                        <!--<tr class="screen-row">
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A1
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A2
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A3
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A4
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A5
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A6
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A7
+                            </td>
+                            <td class="screen-seat seat-double">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/2-seat_GREY.png"/>
+                                <br/>
+                                A8,9
+                            </td>
+                            <td class="screen-seat seat-standard">
+                                <img src="https://www.jack-roe.co.uk/static/sales/images/seats/1-seat_GREY.png"/>
+                                <br/>
+                                A10
+                            </td>
+                        </tr>-->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>

@@ -14,7 +14,7 @@ function gfcAutoload($className) {
 
     $class_name = strtolower($className);
 
-    $default = "../core/class." . $class_name . ".php";
+    $default = "../core/classes/class." . $class_name . ".php";
 
     if(file_exists($default)) {
 
@@ -32,7 +32,13 @@ $app = new \Slim\App($config);
 
 $container = $app->getContainer();
 
+$container["db"] = function() {
 
+    $conn = parse_ini_file("../app/db.ini");
+
+    return new db($conn["host"], $conn["username"], $conn["password"], $conn["database"]);
+
+};
 
 $container['notAllowedHandler'] = function ($container) {
     return function ($request, $response, $methods) use ($container) {

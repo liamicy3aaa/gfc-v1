@@ -1,0 +1,65 @@
+<div class="container container-fluid my-2">
+
+    <div class="mx-auto mt-5 stepwizard col-md-offset-3">
+        <div class="stepwizard-row setup-panel">
+            <div class="stepwizard-step">
+                <a href="#step-1" class="btn btn-success btn-circle">1</a>
+                <p>Select tickets</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-2" class="btn btn-success btn-circle" disabled="disabled">2</a>
+                <p>Select seats</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-3" class="btn btn-primary btn-circle" disabled="disabled">3</a>
+                <p>Enter details</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-4" class="btn btn-secondary btn-circle" disabled="disabled">4</a>
+                <p>Review basket</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card my-3">
+        <div class="card-header text-center">
+            <p class="h4" >Your details</p>
+        </div>
+        <div class="card-body">
+            <form>
+                <div class="form-group row">
+                    <label class=" text-sm-right col-sm-4 col-form-label" for="name">Name</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" id="name" type="text" placeholder="Please enter your name"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class=" text-sm-right col-sm-4 col-form-label" for="phone">Phone number</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" id="phone" type="tel" placeholder="Please enter your contact number"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class=" text-sm-right col-sm-4 col-form-label" for="email">Email</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" id="email" type="email" placeholder="Please enter your email"/>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class=" text-sm-right col-sm-4 col-form-label" for="reEmail">Re-enter email</label>
+                    <div class="col-sm-6">
+                        <input class="form-control" id="reEmail" type="email" placeholder="Please re-enter your email"/>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card-body col-sm-8 mx-auto">
+                    <div class="alert alert-warning alert-dismissable container-fluid">
+                        <div class="col-sm-12"><p class="d-inline">By completing this booking, I confirm that I have read and accepted the terms and conditions and privacy policy.</p>
+                            <button class="close"><input class="form-control d-inline float-right" type="checkbox"/></button>
+                        </div>
+                    </div>
+                </div>
+    <a href="Javascript:void(0)" class="btn btn-block text-center mt-3 mb-5 p-3 btn-outline-secondary">Next</a>
+</div>
