@@ -2,7 +2,12 @@ var Cinema = {
 
     settings: {},
     
-    startTicketSelection: function(ticketSettings, showId) {
+    Init: function(settings) {
+        
+        $.extend(Cinema.settings, settings);
+        
+        Cinema.settings.navWarn = true;
+        Cinema.preventUnload();
         
         Cinema.settings.tickets = {
             
@@ -28,7 +33,20 @@ var Cinema = {
             }
             
         };
-        Cinema.settings.show = showId;
+        
+    },
+    
+    preventUnload: function() {
+        
+        window.onbeforeunload = function() { 
+          if (Cinema.settings.navWarn) {
+            return "You have an unfinished booking. If you navigate away from this page you will lose your booking.";
+          }
+        }
+        
+    },
+    
+    startTicketSelection: function() {
         
         $(".ticket-option").on("change", function(){
             
@@ -134,7 +152,7 @@ var Cinema = {
                         $(".screen tbody").html("");
                         $(this).attr("disabled", "disabled");
                         $(this).addClass("disabled");
-                        Cinema.startTicketSelection({}, Cinema.settings.show); 
+                        Cinema.startTicketSelection(); 
                         
                     });
                     
@@ -405,6 +423,7 @@ var Cinema = {
                 success: function(response) {
 
                     $(".booking-details-screen").html(response.details);
+                    Cinema.settings.bookingId = response.bookingId;
                     $("#bookingStep2").addClass("d-none");
                     $("#bookingStep3").removeClass("d-none");
 
@@ -414,7 +433,34 @@ var Cinema = {
 
                         $("#bookingStep2").removeClass("d-none");
                         $("#bookingStep3").addClass("d-none");
+                        
+                        $.ajax({
+                            url: "/booking/ajax/cancel/" + response.bookingId,
+                            method: "POST",
+                            success: function(response) {
+                                
+                                alert("cancellation successful");
+                                
+                            },
+                            error: function(err) {
+                                
+                                alert("Cancellation failed");
+                                
+                            }
+                            
+                        });
+                        
                         Cinema.startSeatSelection(Cinema.settings.selectedCount, Cinema.settings.selectedSeats);
+                        
+                        $("#navigationBack").unbind("click").on("click", function(){
+                            
+                            $("#bookingStep1").removeClass("d-none");
+                            $("#bookingStep2").addClass("d-none");
+                            $("#navigationBack").addClass("disabled");
+                            $("#navigationBack").attr("disabled", "disabled");
+                            Cinema.startTicketSelection();
+                            
+                        });
 
                     });
 
@@ -436,8 +482,145 @@ var Cinema = {
     },
     
     startDetailsSection: function() {
+        
+        var continueProcess = false;
+        
+        function processVal(errors) {
+            
+            for(x = 0; x < errors.length; x++) {
+                
+                console.log(errors[x].el);
+                
+                //console.log(errors[x].el + " - " + errors[x].error);
+                
+                $(errors[x].el).addClass("is-invalid");
+                
+            }
+            
+            for(x = 0; x < success.length; x++) {
+                
+                 $(success[x]).addClass("is-valid");
+                 $(success[x]).removeClass("is-invalid");
+                
+            }
+            
+        }
+        
+        // Array used as error collection
+        var errors = [];
+        var success = [];
+        var items = ["email", "name", "reEmail", "phone"];
+        
+        function validateForm() {
+            
+             // reset error array
+           errors = [];
+           success = [];
+           if( !$("#detailsScreen").isValid(lang, conf, false) ) {
+               continueProcess = false;
+               processVal( errors );
+           } else {
+           // The form is valid  
+           continueProcess = true;
+            
+            for(x = 0; x < items.length; x++) {
+                
+                $(items[x]).removeClass("is-invalid");
+                $(items[x]).addClass("is-valid");
+                
+            }
            
+           }
+            
+        }
+        
+        
+
+        // Validation configuration
+        conf = {
+          onElementValidate : function(valid, $el, $form, errorMess) {
+             if( !valid ) {
+              // gather up the failed validations
+              errors.push({el: $el, error: errorMess});
+             } else {
+                 
+                 success.push($el);
+                 
+             }
+          }
+        }
+        
+        lang = {};
+
+        // Manually load the modules used in this form
+        $.formUtils.loadModules('security');
+
+        $("#navigationNext").unbind("click");
+        
+        $('#detailsScreen').on('click', function() {
+          
+            validateForm();
+            
+        });
+        
+        $('#detailsScreen input').on('blur', function() {
+          
+            validateForm();
+            
+        });
+        
+        $(document).on( 'keyup', function( e ) {
+            if( e.which == 9 ) {
+                validateForm();
+            }
+        } );
+        
         $("#navigationNext").unbind("click").on("click", function(){
+            
+            validateForm();
+            
+            if(!continueProcess) {
+                
+                alert("One or more fields not valid.");
+                return;
+                
+            } 
+            
+            data = {
+                "name": $("#name").val(),
+                "phone": $("#phone").val(),
+                "email": $("#email").val()
+            };
+            
+            console.log(data);
+            
+            $.ajax({
+                url: "/booking/ajax/details/" + Cinema.settings.bookingId,
+                method: "POST",
+                dataType: "JSON",
+                data: data,
+                success: function(response) {
+                    
+                    $("#bookingStep4").removeClass("d-none");
+                    $("#bookingStep3").addClass("d-none");
+                    $("#bookingNavigation").removeClass("d-flex");
+                    $("#bookingNavigation").addClass("d-none");
+                    
+                    Cinema.settings.navWarn = false;
+                    
+                },
+                error: function(err) {
+                    
+                    let response = JSON.parse(err.responseText);
+                    
+                    alert(response.error_desc);
+                    console.log(response);
+                }
+            });
+            
+        });
+           
+        /*$("#navigationNext").unbind("click").on("click", function(){
             
             let con = true;
             
@@ -476,7 +659,7 @@ var Cinema = {
                 
             }
             
-        });
+        }); */
         
         
         
