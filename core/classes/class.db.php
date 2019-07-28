@@ -56,7 +56,7 @@ class db {
                 call_user_func_array(array($this->query, 'bind_param'), $args_ref);
 
             }
-
+              
             $this->query->execute();
 
             if ($this->query->errno) {
@@ -163,6 +163,12 @@ class db {
         if(is_int($var)) return 'i';
 
         return 'b';
+    }
+    
+    public function conn() {
+        
+        return $this->connection;
+        
     }
 
 }

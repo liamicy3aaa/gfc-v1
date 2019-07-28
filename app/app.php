@@ -1,4 +1,5 @@
 <?php
+ob_end_clean();
 session_name("GFC-AUTH");
 session_start();
 date_default_timezone_set("Europe/London");
@@ -40,6 +41,13 @@ $container["db"] = function() {
 
 };
 
+$container["cinema"] = function($container) {
+
+    return new cinema(array(), $container["db"]);
+
+
+};
+
 $container['notAllowedHandler'] = function ($container) {
     return function ($request, $response, $methods) use ($container) {
 
@@ -59,26 +67,31 @@ $container['notAllowedHandler'] = function ($container) {
 };
 
 // Client info
-$client = array(
-    "name" => "GFC Cinemas",
-    "id" => "1043"
+//if(!isset($_SESSION["system"])) {
 
-);
+    $client = $container["cinema"]->getCinemaInfo();
 
-$_SESSION["system"] = $client;
+    $_SESSION["system"] = $client;
 
+//}
+
+// UI Renderer
 $phpView = new \Slim\Views\PhpRenderer('../templates/', [
-    "title" => $client["name"],
-    "__webTitle" => $client["name"]
+    "title" => $_SESSION["system"]["name"],
+    "__webTitle" => $_SESSION["system"]["name"]
     ]);
+
 $phpView->setLayout("layout.phtml");
 
 $container['view'] = $phpView;
 
 //Override the default Not Found Handler after App
 unset($app->getContainer()['notFoundHandler']);
+
 $container['notFoundHandler'] = function ($c) {
+
     return function ($request, $response) use ($c) {
+
         $newResponse = new \Slim\Http\Response(404);
         $error = "";
         
@@ -89,5 +102,6 @@ $container['notFoundHandler'] = function ($c) {
         $errorScreen = str_replace("##SYSTEMTITLE##", $_SESSION["system"]["name"], $error);
     
              return $newResponse->write($errorScreen);
+
     };
 };

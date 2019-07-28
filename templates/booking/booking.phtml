@@ -1,0 +1,165 @@
+<head>
+    <link rel="stylesheet" href="/assets/css/seat_layout.css">
+</head>
+<div class="jumbotron text-white pl-4 pl-md-5 film-banner banner-dark" style="min-height: 462px;
+background-image: url('<?php print $data["show"]["film_banner"]; ?>');
+background-repeat: no-repeat;
+background-size: cover;
+background-color: black;
+border-radius: 0px;
+text-shadow:4px 2px 4px black;">
+    <div class="container container-fluid mt-5 film-banner-inner">
+        <p class="lead align-middle">Your booking tickets for:</p>
+        <p class="h2 display-4 pt-1 mt-1 pt-sm-1 align-middle"><?php print $data["show"]["film_name"]; ?></p>
+        <p class="lead align-middle">On <?php print date("l jS F", $data["show"]["time"]);?> at <?php print date("H:i", $data["show"]["time"]);?></p>
+        <br/>
+        <a class='text-white pt-5' href="/">< Back to what's on</a>
+    </div>
+</div>
+<div class="mt-5 mb-2 mx-3 d-none">
+    <h3>Booking screen</h3>
+</div>
+<div class="container container-fluid mb-4">
+    <div id="bookingStep1" class="m-3">
+        <div class="card">
+        <div class="card-header">
+            <p>Please select tickets for:</p>
+            <p style="font-weight:bold;"><?php print $data["show"]["film_name"]; ?> (<?php print $data["show"]["film_rating"]; ?>) at <?php print date("H:i", $data["show"]["time"]);?> on <?php print date("l jS F", $data["show"]["time"]);?> showing in screen <?php print $data["show"]["screen_name"];?></p>
+            <p style="font-weight:bold;">Available seats: <span><?php print $data["availableTickets"]; ?></span></p>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <th>Selection</th>
+                    <th class="text-right">Price</th>
+                    <th>Qty</th>
+                    <th class="d-none d-sm-table-cell text-right">Subtotal</th>
+                </thead>
+                <tbody>
+                <?php print $data["tickets"]; ?>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body">
+            <strong><span id="selectedTicketsTotal">2</span> tickets selected at a total cost of &pound;<span id="selectedTicketsCost">14.00</span></strong>
+        </div>
+    </div>
+    </div>
+    <div id="bookingStep2" class="m-3 d-none">
+    <div class="card">
+        <div class="card-header">
+            <p>Please select seats for:</p>
+            <p style="font-weight:bold;"><?php print $data["show"]["film_name"]; ?> (<?php print $data["show"]["film_rating"]; ?>) at <?php print date("H:i", $data["show"]["time"]);?> on <?php print date("l jS F", $data["show"]["time"]);?> showing in screen 1</p>
+            <p>Remaining: <span class="text-bold seats-remaining">%</span></p>
+        </div>
+        <div class="card-body">
+            <div class="screen-container text-center p-0 mx-auto m-0 m-md-5">
+                <table class="screen mx-auto">
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+    <div id="bookingStep3" class="m-3 d-none">
+        <div class="card my-3">
+            <div class="card-header text-center">
+                <p class="h4" >Your details</p>
+            </div>
+            <div class="card-body booking-details-screen">
+            <?php print $data["details"]; ?>
+            </div>
+        </div>
+        <div class="card-body col-sm-8 mx-auto">
+            <div class="alert alert-warning alert-dismissable container-fluid">
+                <div class="col-sm-12"><p class="d-inline">By completing this booking, I confirm that I have read and accepted the terms and conditions and privacy policy.</p>
+                    <button class="close"><input class="form-control d-inline float-right" type="checkbox"/></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="bookingStep4" class="m-3 d-none">
+        <h1>Booking confirmed</h1>
+        <br/>
+        <div class="card mt-2">
+            <div class="card-header bg-light">
+                <p class="font-weight-bold h4 mt-2">Thanks for booking. A confirmation email has been sent to you.</p>
+                <p class="text-muted">Confirmation: WDFF32FD</p> 
+            </div>
+            <div class="card-body container">
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                    <h4>Booking details:</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td class="text-right border-0">Film:</td>
+                                    <td class="font-weight-bold border-0">Rocketman (15)</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right border-0">Date & time:</td>
+                                    <td class="font-weight-bold border-0">24/07/2019 20:30</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-right border-0">Seats:</td>
+                                    <td class="font-weight-bold border-0">
+                                        Row 1 - Seat 7<br/>
+                                        Row 1 - Seat 8<br/>
+                                        Row 1 - Seat 9
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr class="d-block d-md-none"/>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h4>Cost:</h4>
+                        <table class="table table-sm mx-auto" style="max-width:300px;">
+                            <tbody>
+                                <tr>
+                                    <td class="border-0">Adult</td>
+                                    <td class="border-0 text-right">&pound;8.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="border-0">Adult</td>
+                                    <td class="border-0 text-right">&pound;8.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="border-0">Adult</td>
+                                    <td class="border-0 text-right">&pound;8.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="border-0">Adult</td>
+                                    <td class="border-0 text-right">&pound;8.00</td>
+                                </tr>
+                                <tr class="bg-secondary text-white">
+                                    <td class="border-0">Total:</td>
+                                    <td class="border-0 text-right">&pound;32.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            
+            </div>
+        
+        </div>
+    </div>
+</div>
+<div class="container container-fluid">
+    <div id="bookingNavigation" class="btn-group d-flex mb-3">
+        <button id="navigationBack" class="btn text-center w-100 btn-outline-secondary disabled" disabled="disabled">Back<br/><i class="fas fa-arrow-alt-circle-left"></i></button>
+        <button id="navigationNext" class="btn text-center w-100 btn-outline-secondary">Next<br/><i class="fas fa-arrow-alt-circle-right"></i></button>
+    </div>
+</div>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
+<script src="/assets/js/Cinema.js"></script>
+<script>
+Cinema.Init({
+    "show": <?php print $data["show"]["showId"];?>
+});
+
+Cinema.startTicketSelection();
+//Cinema.startSeatSelection(3, ["11","12","13"]);
+</script>

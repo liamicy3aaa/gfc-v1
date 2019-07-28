@@ -18,7 +18,45 @@ include "../routes/manage.php";
 
 $app->get('/', function (Request $request, Response $response, array $args) {
 
-    return $response = $this->view->render($response, "whats-on.phtml", ["_title" => "What's-on"]);
+    $cinema = $this->get("cinema");
+    $r = $cinema->getShowtimes(); //getFilmsByReleaseDate(((isset($_GET["mon"])) ? $_GET["mon"]: 8), 2019);
+
+    if($r === false) {
+
+        $films = "<div class='alert alert-info text-center my-3'>No films currently showing.</div>";
+
+    } else {
+
+        // Get films using the filmIds
+
+        $films = $cinema->getFilms($r["_films"]);
+
+        unset($r["_films"]);
+
+        $filmData = array();
+
+        foreach ($films as $index => $film) {
+
+            $item = $film;
+            $item["showtimes"] = $r[$film["id"]];
+
+            $filmData[] = $item;
+
+        }
+
+
+        $films = $cinema->buildFilmList($filmData);
+
+    }
+
+    //return $response = $this->view->render($response, "blank.phtml", ["_title" => "blank", "html" => $html]);
+
+
+    return $response = $this->view->render($response, "whats-on.phtml", [
+        "_title" => "What's-on",
+        "films" => $films,
+        "banner" => $cinema->buildPromoBanner()
+    ]);
 
 });
 

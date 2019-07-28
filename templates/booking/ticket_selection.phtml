@@ -14,7 +14,7 @@ text-shadow:4px 2px 4px black;">
     </div>
 </div>
 <div class="container container-fluid mb-5">
-    <div class="mx-auto stepwizard col-md-offset-3">
+    <div class="mx-auto stepwizard col-md-offset-3 d-none d-sm-table">
         <div class="stepwizard-row setup-panel">
             <div class="stepwizard-step">
                 <a href="#step-1" class="btn btn-primary btn-circle">1</a>
@@ -50,7 +50,8 @@ text-shadow:4px 2px 4px black;">
                     <th class="d-none d-sm-table-cell text-right">Subtotal</th>
                 </thead>
                 <tbody>
-                    <tr>
+                <?php print $data["tickets"]; ?>
+                    <!--<tr>
                         <td class="col-8 col-sm-10 col-md-9">Adult</td>
                         <td class="col-1 col-sm-1 col-md-1 text-right">&pound;8.00</td>
                         <td class="col-3 col-sm-1 col-md-2 text-right">
@@ -99,7 +100,7 @@ text-shadow:4px 2px 4px black;">
                             </select>
                         </td>
                         <td class="col-1 col-md-1 text-right d-none d-sm-table-cell"></td>
-                    </tr>
+                    </tr>-->
                 </tbody>
             </table>
         </div>

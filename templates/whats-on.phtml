@@ -1,4 +1,4 @@
-<div class="jumbotron text-white pl-4 pl-md-5 film-hero" style="min-height: 462px;
+<!--<div class="jumbotron text-white pl-4 pl-md-5 film-hero" style="min-height: 462px;
 background-image: url('https://wellingtonorbit.co.uk/wp-content/uploads/2019/07/isnJGDrfR9dIrHMsPTvHtJaGEpc.jpg');
 background-repeat: no-repeat;
 background-size: cover;
@@ -10,7 +10,8 @@ text-shadow:4px 2px 4px black;">
         <p class="lead align-middle">This is a modified jumbotron that occupies the entire horizontal space of its parent.</p>
         <button class='btn btn-light' style='border-radius:20px'>PLAY TRAILER</button>
     </div>
-</div>
+</div>-->
+<?php print $data["banner"];?>
 <div id="whats-on-categories" class="container container-fluid">
     <h1 class="mb-4">What's on</h1>
     <div id='mobileCateogries' class="row d-block d-sm-none">
@@ -28,7 +29,8 @@ text-shadow:4px 2px 4px black;">
     </div>
 </div>
 <div class="container container-fluid mt-3 mb-3">
-    <div class="row p-3" style="min-height:150px;">
+    <?php print $data["films"];?>
+    <!--<div class="row p-3" style="min-height:150px;">
             <div class="col-12 col-sm-3 col-md-2">
                 <img class="img-fluid img-round-corner film-thumb" src="https://theroxy.org/appimages/us/custom/WELORB/rocketman.jpg"/>
             </div>
@@ -72,5 +74,5 @@ text-shadow:4px 2px 4px black;">
                     </div>
                 </div>
             </div>
-    </div>
+    </div>-->
 </div>

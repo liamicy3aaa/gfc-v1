@@ -1,6 +1,8 @@
 php_value date.timezone 'Europe/London'
 Header always set Content-Security-Policy "upgrade-insecure-requests;"
 
+Options -Indexes
+
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

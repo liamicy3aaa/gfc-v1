@@ -1,30 +1,38 @@
-<div class="jumbotron text-white pl-4 pl-md-5" style="min-height: 462px;
-background-image: url('https://wellingtonorbit.co.uk/wp-content/uploads/2019/07/isnJGDrfR9dIrHMsPTvHtJaGEpc.jpg');
+<div class="jumbotron text-white pl-4 pl-md-5 film-banner banner-dark" style="min-height: 462px;
+background-image: url('<?php print $data["banner"]; ?>');
 background-repeat: no-repeat;
 background-size: cover;
 background-color: black;
 border-radius: 0px;
 text-shadow:4px 2px 4px black;">
-    <div class="container container-fluid">
-        <p class="h2 display-4 pt-5 mt-5 pt-sm-3 align-middle">Rocketman</p>
-        <p class="lead align-middle">This is a modified jumbotron that occupies the entire horizontal space of its parent.</p>
-        <button class='btn btn-light' style='border-radius:20px'>PLAY TRAILER</button>
+    <div class="container container-fluid film-banner-inner">
+        <p class="h2 display-4 pt-5 mt-5 pt-sm-3 align-middle"><?php print $data["_title"]; ?></p>
+        <a href="Javascript:void(0);" class='btn btn-light my-3' style='border-radius:20px; text-shadow:none;'>PLAY TRAILER</a>
         <br/>
-        <a class='text-white pt-5' href="/">< Back to what's on</a>
+        <a class='text-white mt-5' href="/">< Back to what's on</a>
     </div>
 </div>
 <div class="container container-fluid">
-    <p>Rocketman</p>
+    <p><?php print $data["_title"]; ?></p>
     <hr/>
     <div class="row">
-        <div class="col-sm-5">
-            <img style="border-radius: 3px; margin-bottom: 3em;" src="https://theroxy.org/appimages/us/custom/WELORB/fisherman's friends.jpg" alt="Fisherman’s Friends" class="poster">
+        <div class="col-sm-5 d-none d-sm-block">
+            <img style="border-radius: 3px; margin-bottom: 3em; max-height:600px;" src="<?php print $data["thumbnail"]; ?>" alt="<?php print $data["_title"]; ?>" class="poster img-fluid">
         </div>
         <div class="col-sm-7 p-3">
-            <p>Ten fisherman from Cornwall are signed by Universal Records and achieve a top ten hit with their debut album of Sea Shanties. Based on the true-life story of Cornish folk band, Fisherman's Friends.</p>
-            <ul>
-                <li><i>RELEASED</i> 17/07/2019</li>
+            <p><?php print $data["desc"]; ?></p>
+            <ul class="movie-points">
+                <li><i>RELEASED</i><?php print $data["release"]; ?></li>
+                <li><i>CERTIFICATE</i><?php print $data["rating"]; ?></li>
+                <li><i>RUNNING TIME</i><?php print $data["runtime"];?> mins</li>
             </ul>
+            <h5>Showtimes</h5>
+            <hr class="mt-0"/>
+            <div class="mb-1">
+                <?php print $data["showtimes"]; ?>
+            </div>
+            <hr/>
+            <p class="small">More showings will be added in the coming weeks</p>
         </div>
     </div>
 </div>

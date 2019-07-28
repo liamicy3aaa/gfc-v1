@@ -96,6 +96,70 @@
     
 }
 
+ul.movie-points {
+    margin: 25px 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+ul.movie-points li {
+    font-size: 12px;
+
+    margin-bottom: 10px;
+
+    letter-spacing: 1px;
+}
+
+ul.movie-points li i {
+    font-size: 12px;
+    font-style: normal;
+
+    display: inline-block;
+
+    width: 115px;
+
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+
+    color: #4a4a4a;
+}
+
+/** FILM BANNER OVERLAY **/
+.film-banner {
+    
+    background-image: none;
+    position: relative;
+}
+
+.film-banner-inner {
+    
+    position:relative;
+    
+}
+
+.banner-light:before {
+    
+    background-image: linear-gradient(to top,rgba(0,0,0,0.5) 1%,rgba(0,0,0,0.1));
+    
+}
+.banner-dark:before {
+    
+    background-image: linear-gradient(to top,rgba(0,0,0,0.5) 1%,rgba(0,0,0,0.4));
+    
+}
+
+.film-banner:before {
+    position: absolute;
+    height:462px;
+    content: '';
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  /** MEDIA QUERIES **/
 @media (max-width: 767px) {
     
     .film-thumb {
