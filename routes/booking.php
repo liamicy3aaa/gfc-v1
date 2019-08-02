@@ -7,7 +7,9 @@ $app->group("/booking", function(){
     
     $this->post("/ajax/cancel/{bookingId}", function($request, $response, $args) {
         
-        if(!ctype_alnum($args["bookingId"])) {
+        $bookingId = cipher::decrypt($args["bookingId"]);
+        
+        if(!ctype_alnum($bookingId)) {
             
             return $response->withJson(array("status"=>400, "error"=>"invalid_booking_id", "error_desc"=>"Invalid booking id provided"), 200);
             
@@ -15,7 +17,7 @@ $app->group("/booking", function(){
         
         $cinema = $this->get("cinema");
         
-        if($cinema->cancelBooking($args["bookingId"])) {
+        if($cinema->cancelBooking($bookingId)) {
         
             return $response->withJson(array("status"=>200));
             
@@ -24,12 +26,13 @@ $app->group("/booking", function(){
         
     });
     
-    $this->post("/ajax/new/{showId:[0-9]+}", function($request, $response, $args) {
+    $this->post("/ajax/new/{showId}", function($request, $response, $args) {
         
         $cinema = $this->get("cinema");
+        $showId = cipher::decrypt($args["showId"]);
         
         // Getting show info
-        $showInfo = $cinema->getShowInfo($args["showId"]);
+        $showInfo = $cinema->getShowInfo($showId);
         
         // If no show is found, return error
         if(count($showInfo) < 1) {
@@ -48,13 +51,19 @@ $app->group("/booking", function(){
         }
         
         // Storing the selected tickets in the session temporarily
-        $_SESSION["_booking"]["show"] = $args["showId"];
+        $_SESSION["_booking"]["show"] = $showId;
         $_SESSION["_booking"]["tickets"] = $body["tickets"];
         $_SESSION["_booking"]["ticketCount"] = 0;
         
+        // Get seat info for each ticket type
+        $types = $cinema->getTicketInfo($showInfo["ticket_config"]["types"]);
+        
+        
         foreach($body["tickets"] as $id => $count) {
             
-            $_SESSION["_booking"]["ticketCount"] += $count;
+            $seats = json_decode($types[$id]["ticket_config"], true)["seats"];
+            
+            $_SESSION["_booking"]["ticketCount"] += ($seats * $count);
             
         }
         
@@ -66,7 +75,13 @@ $app->group("/booking", function(){
         }
         
         // Building seating plan with the show id and ticket count
-        $seating = $cinema->buildSeatingPlan($args["showId"], $_SESSION["_booking"]["ticketCount"]);
+        $seating = $cinema->buildSeatingPlan($showId, $_SESSION["_booking"]["ticketCount"]);
+        
+        if($seating === false) {
+            
+            return $response->withJson(array("status"=>400, "error"=>"notEnoughSeats", "error_desc"=>"The number of tickets you requested is higher than the remaining available tickets"), 400);
+            
+        }
         
         // Return the seating plan to front-end
         return $response->withJson(array("status"=>200, "seating"=>$seating), 200);      
@@ -75,12 +90,13 @@ $app->group("/booking", function(){
     
     // STANDARD ENDPOINTS FOR PAGES //
 
-    $this->post("/ajax/seating/{showId:[0-9]+}", function($request, $response, $args){
+    $this->post("/ajax/seating/{showId}", function($request, $response, $args){
         
         $cinema = $this->get("cinema");
+        $showId = cipher::decrypt($args["showId"]);
         
         // Getting show info
-        $showInfo = $cinema->getShowInfo($args["showId"]);
+        $showInfo = $cinema->getShowInfo($showId);
         
         // If no show is found, return error
         if(count($showInfo) < 1) {
@@ -107,8 +123,6 @@ $app->group("/booking", function(){
         
         $ticketInfo = $cinema->getTicketInfo($showInfo["ticket_config"]["types"]);
         
-        //print "<pre>"; print_r($ticketInfo); print "</pre>";
-       //exit;
         // Get total price of tickets
         $total = 0;
         
@@ -120,14 +134,22 @@ $app->group("/booking", function(){
             
         }
         
+        $seats = array();
+        
+        foreach($body["seats"] as $seat) {
+            
+            $seats[] = cipher::decrypt($seat);
+            
+        }        
+        
         // Creating the booking with a status of reserved_temp so seats are reserved while they enter their details
         $data = array(
-            "showtime_id" => $args["showId"],
+            "showtime_id" => $showId,
             "film_id" => $showInfo["film_id"],
             "booking_info" => $_SESSION["_booking"]["tickets"],
-            "booking_seats" => $body["seats"],
+            "booking_seats" => $seats,
             "booking_total" => $total,
-            "booking_seats_total" => count($body["seats"]),
+            "booking_seats_total" => count($seats),
             "booking_status" => "reserved_temp"     
         );
         
@@ -140,9 +162,9 @@ $app->group("/booking", function(){
         } else {
             
             // Generate details screen
-            $details = $cinema->buildDetailsScreen($args["showId"], $booking["reference"]);
+            $details = $cinema->buildDetailsScreen($showId, $booking["reference"]);
             
-            return $response->withJson(array("status"=>200, "bookingId"=>$booking["reference"], "details"=>$details), 200);
+            return $response->withJson(array("status"=>200, "bookingId"=>cipher::encrypt($booking["reference"]), "details"=>$details), 200);
             
         }
         
@@ -151,9 +173,10 @@ $app->group("/booking", function(){
     $this->post("/ajax/details/{bookingId}", function($request, $response, $args){
         
               $cinema = $this->get("cinema");
+              $bookingId = cipher::decrypt($args["bookingId"]);
               
               // Check booking exists
-              if(!$cinema->bookingExists($args["bookingId"])) {
+              if(!$cinema->bookingExists($bookingId)) {
                   
                   return $response->withJson(array("status" => 400, "error" => "invalid_booking_id", "error" => "Unable to find booking."), 400);
                   
@@ -220,10 +243,11 @@ $app->group("/booking", function(){
                 "booking_name" => $body["name"],
                 "booking_email" => $body["email"],
                 "booking_phone" => $body["phone"],
-                "booking_status" => "reserved"
+                "booking_status" => "reserved",
+                "booking_method" => "online"
               );
               
-              $booking = $cinema->updateBooking($args["bookingId"], $data);
+              $booking = $cinema->updateBooking($bookingId, $data);
               
               if(!$booking) {
                   
@@ -231,7 +255,11 @@ $app->group("/booking", function(){
                   
               } else {
                   
-                  return $response->withJson(array("status"=>200),200);
+                  $booking_id = $cinema->getBookingInfo($bookingId);
+                  
+                  $html = $cinema->buildConfirmationScreen($booking_id["showtime_id"], $bookingId);
+                  
+                  return $response->withJson(array("status" => 200, "confirmation" => $html), 200);
                   
               }
               
@@ -249,7 +277,7 @@ $app->group("/booking", function(){
         
         $cinema = $this->get("cinema");
         
-        $showInfo = $cinema->getShowInfo($args["show"]);
+        $showInfo = $cinema->getShowInfo(cipher::decrypt($args["show"]));
         
         if(time() > $showInfo["time"]) {
             
@@ -265,6 +293,15 @@ $app->group("/booking", function(){
         
         // Getting number of available seats / tickets
         $available = $cinema->availableSeats($showInfo["showId"]);
+
+        // If show is fully booked, display error
+        if($available["available"] < 1) {
+            
+            die("This show is fully booked");
+            
+        }
+        
+        $showInfo["showId"] = cipher::encrypt($showInfo["showId"]);
             
             return $response = $this->view->render($response, "/booking/booking.phtml", [
                 "_title" => "New Booking",
@@ -278,80 +315,23 @@ $app->group("/booking", function(){
 
     });
 
-    $this->get("/new/tickets", function($request, $response, $args) {
-        
-        $cinema = $this->get("cinema");
-
-        $tickets = $cinema->buildTicketScreen([1,3,4]);
-        
-        return $response = $this->view->render($response, "/booking/ticket_selection.phtml", [
-            "_title" => "test tickets",
-            "tickets" => $tickets
-            ]);
-
-    });
-    
-    $this->get("/new/details", function($request, $response, $args) {
-
-        return $response = $this->view->render($response, "/booking/details.phtml", ["_title" => "test details"]);
-
-    });
-
     $this->get("/new/db", function($request, $response, $args) {
+        
+        notifications::add("danger", "Failed to create a new booking.");
+        die("200");
 
         $cinema = $this->get("cinema");
 
             $show = $cinema->getShowInfo(3);
-            $r = $cinema->getTicketInfo($show["ticket_config"]["types"]);
+            //$r = $cinema->getTicketInfo($show["ticket_config"]["types"]);
+            
+            // Get seat info for each ticket type
+        $r = $cinema->getTicketInfo($show["ticket_config"]["types"]);
         
-        print "<pre>"; print_r($_SESSION); print "</pre>";
+        print "<pre>"; print_r($r); print "</pre>";
 
         exit;
 
     });
-
-    $this->get("/new/seats", function($request, $response, $args) {
-
-        $alpha = range("A", "Z");
-        $count = 0;
-        $html = "";
-
-        while($count < 8) {
-
-            $secondary = 0;
-            $letter = $alpha[$count];
-
-
-            $html .= "<tr class='screen-row'>";
-
-                while($secondary < 10) {
-
-                    $value = ((rand(0,1) == 1) ? "GREEN" : "GREY");
-
-                    $html .= "<td class='screen-seat seat-standard' data-seatId='" . $letter . ($secondary + 1) . "'>";
-
-                        $html .= "<img src='/assets/images/seats/1-seat_" . $value . ".png'/>";
-
-                        $html .= "<br/>";
-
-                        $html .= $letter . ($secondary + 1);
-
-                    $html .= "</td>";
-
-                    $secondary++;
-
-                }
-
-            $html .= "</tr>";
-
-            $count++;
-        }
-
-        return $response = $this->view->render($response, "/booking/seat_selection.phtml", ["_title" => "test seats", "seats" => $html]);
-
-
-    });
-
-
-
+    
 });

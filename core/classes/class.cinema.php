@@ -1,9 +1,23 @@
 <?php
 
+/**
+* Cinema Class
+* This is the main class for the cinema system
+* Author: Liam McClelland
+* Copyright: © 2019 Gadgetfreak Systems.
+*/
+
 class cinema {
     
     protected $config;
     protected $conn;
+    
+    /**
+    * Constructor
+    * 
+    * @param mixed $config
+    * @param mixed $database
+    */
     
     public function __construct($config = array(), $database) {
         
@@ -13,6 +27,12 @@ class cinema {
 
     }
 
+    /**
+    * Build promo banner
+    * Builds the main banner on the front page using data from the database
+    *
+    * @return string 
+    */
     public function buildPromoBanner() {
 
             $promo = $this->conn->query("SELECT value FROM gfc_config WHERE `key` = ?", "_promoBanner")->fetchArray();
@@ -31,6 +51,12 @@ class cinema {
 
     }
 
+    /**
+    * Get Cinema Information
+    * Get the information for the cinema that is stored in the gfc_config table
+    *
+    * @return array 
+    */
     public function getCinemaInfo() {
 
         $info = $this->conn->query("SELECT * FROM gfc_config WHERE `key` = 'INFO_cinemaName'")->fetchArray();
@@ -45,6 +71,14 @@ class cinema {
         return $data;
 
     }
+    
+    /**
+    * Get screen information
+    * Get information about either particular screens or all screens on the system
+    * 
+    * @param mixed $ids
+    * @return array
+    */
     
     public function getScreens($ids = array()) {
         
@@ -62,7 +96,15 @@ class cinema {
         
         return $film;
         
-    } 
+    }
+    
+    /**
+    * Get film data
+    * Get information about a film
+    *  
+    * @param mixed $id
+    * @return array
+    */
     
     public function getFilmData($id = false) {
         
@@ -77,6 +119,12 @@ class cinema {
         return $film;    
         
     }
+    
+    /**
+    * Get data for either particular films or all active films on the system.
+    * 
+    * @param mixed $ids
+    */
     
     public function getFilms($ids = array()) {
         
@@ -96,11 +144,21 @@ class cinema {
         
     }
     
-    public function getTicketInfo($ids) {
+    /**
+    * Get ticket information
+    * Get information about a ticket type on the system.
+    * 
+    * @param mixed $ids
+    * @param mixed $onlyActive 
+    * @return array
+    */
+    public function getTicketInfo($ids, $onlyActive = true) {
+        
+        $active = (($onlyActive) ? "AND ticket_status = 1" : "");
         
         $ids = implode(",", $ids);
         
-        $r = $this->conn->query("SELECT * FROM gfc_ticket_types WHERE id IN($ids)")->fetchAll();
+        $r = $this->conn->query("SELECT * FROM gfc_ticket_types WHERE id IN($ids) $active")->fetchAll();
         
         $types = array();
         
@@ -113,6 +171,14 @@ class cinema {
         return $types;
         
     }
+    
+    /**
+    * Get show information
+    * Get information about a particular show
+    * 
+    * @param mixed $id
+    * @return array
+    */
     
     public function getShowInfo($id) {
         
@@ -128,6 +194,13 @@ class cinema {
         return $show;
              
     }
+    
+    /**
+    * Create a booking
+    * Create a booking for a particular show / film
+    * 
+    * @param mixed $data
+    */
     
     public function createBooking($data) {
         
@@ -209,6 +282,13 @@ class cinema {
         
     }
     
+    /**
+    * Check if booking exists
+    * 
+    * @param mixed $bookingId
+    * @return boolean
+    */
+    
     public function bookingExists($bookingId) {
         
         $r = $this->conn->query("SELECT ID FROM gfc_bookings WHERE booking_reference = ?", $bookingId)->numRows();
@@ -220,6 +300,37 @@ class cinema {
         } else {
             
             return false;
+            
+        }
+        
+    }
+    
+    /**
+    * Get booking information
+    * Get information about a particular booking
+    * 
+    * @param mixed $bookingId
+    * @return array|boolean
+    */
+    
+    public function getBookingInfo($bookingId) {
+        
+        if(!$this->bookingExists($bookingId)) {
+            
+            return false;
+            
+        }
+        
+        $booking = $this->conn->query("SELECT * FROM gfc_bookings WHERE booking_reference = ?", $bookingId);
+        $total = $booking->numRows();
+        
+        if($total < 1) {
+            
+            return false;
+            
+        } else {
+            
+            return $booking->fetchArray();
             
         }
         
@@ -400,7 +511,7 @@ class cinema {
 
             $data = array(
                 $film["film_thumbnail"],
-                $film["id"],
+                cipher::encrypt($film["id"]),
                 $film["film_name"],
                 $film["film_desc"],
                 $this->buildShowtimes($film, 1),
@@ -433,7 +544,7 @@ class cinema {
 
             if($limit !== false) {
                 
-                return "<a href='film/" . $film["id"] . "' class='btn btn-primary mt-1'>More showtimes ></a>";
+                return "<a href='film/" . cipher::encrypt($film["id"]) . "' class='btn btn-primary mt-1'>More showtimes ></a>";
                 
             } else {
                 
@@ -469,21 +580,23 @@ class cinema {
 
             $date = date("l jS F", strtotime($date));
 
-            $html .= "<span class='pb-1'>$date</span>";
-
-            $html .= "<br/>";
+            $html .= "<p class='pt-2 mb-1'>$date</p>";
             
             foreach($day as $show) {
+                
+                $message = "onclick='alert(\"This show is fully booked.\")'";
+                $config = (($this->availableSeats($show["id"])["available"] < 1) ? "href='Javascript:void(0);' class='btn btn-danger' $message" : "href='/booking/new/" . cipher::encrypt($show["film_id"]) . "/" . cipher::encrypt($show["id"]) . "' class='btn btn-primary'");
 
+                
                 $time = date("H:i", $show["time"]);
 
-                $html .= "&nbsp;<a href='/booking/new/" . $show["film_id"] . "/" . $show["id"] . "' class='btn btn-primary mt-1'>$time</a>";
+                $html .= "&nbsp;<a $config>$time</a>";
                 
             }
 
             if($limit !== false) {
 
-                $html .= "&nbsp;<a href='film/" . $show["film_id"] . "' class='btn btn-primary mt-1'>More showtimes ></a>";
+                $html .= "&nbsp;<a href='film/" . cipher::encrypt($show["film_id"]) . "' class='btn btn-primary'>More showtimes ></a>";
 
             }
 
@@ -523,6 +636,16 @@ class cinema {
            $data = $this->conn->query("SELECT * FROM gfc_ticket_types WHERE $addon")->fetchAll(); 
             
         }
+        
+        return $data;
+        
+    }
+    
+    public function getSeatingInfo($seats) {
+        
+        $seating = implode(",", $seats);
+        
+        $data = $this->conn->query("SELECT * FROM gfc_screens_seats WHERE id IN($seating)")->fetchAll();
         
         return $data;
         
@@ -657,6 +780,179 @@ class cinema {
        return $html;
         
     }
+    
+    public function buildConfirmationScreen($show, $bookingId) {
+        
+        $booking = $this->getBookingInfo($bookingId);
+        
+        if(!$booking) {
+            
+            return "<h1 class='text-center' style='color:red;'>An error occurred while fetching your booking information.</h1>";
+            
+        }
+        
+        $seats = json_decode($booking["booking_seats"], true);
+        
+        $seatInfo = $this->getSeatingInfo($seats);
+        
+        // Loop through seat info and get the name for each ticket type needed
+        $ticketTypes = json_decode($booking["booking_info"], true);
+        
+        $requiredTypes = array();
+        
+        foreach($ticketTypes as $type => $number) {
+            
+            if(intval($number) >= 1 && !in_array($type, $requiredTypes)) {
+                
+                $requiredTypes[] = $type;
+                
+            }    
+            
+        }
+        
+        // Get ticket names
+        $required = implode(",", $requiredTypes);
+        
+        $ticketInfo = $this->conn->query("SELECT id, ticket_label, ticket_cost FROM gfc_ticket_types WHERE id IN($required)")->fetchAll();
+
+        $details = array();
+        
+        //var_dump($ticketTypes);
+        //print "<br/>";
+        //exit;
+        
+        foreach($ticketInfo as $ticket) {
+            
+            $details[$ticket["id"]]["label"] = $ticket["ticket_label"];
+            $details[$ticket["id"]]["cost"] = $ticket["ticket_cost"];
+            $details[$ticket["id"]]["count"] = intval($ticketTypes[$ticket["id"]]);
+            
+        }
+        
+        //var_dump($details);
+        //exit;
+                    
+        // Get show / film info
+        $showInfo = $this->getShowInfo($show);
+        
+        $filmInfo = $this->getFilms(array($showInfo["film_id"]));
+        
+        // START OF HTML
+        
+        $html = "<div class='card-header bg-light'>";
+        
+            $html .= "<p class='font-weight-bold h4 mt-2'>";
+            
+                $html .= "Thanks for booking. A confirmation email has been sent to you.";
+                
+            $html .= "</p>";
+            
+            $html .= "<p class='text-muted'>Confirmation: " . $booking["booking_reference"] . "</p>"; 
+            
+        $html .= "</div>";
+        
+        $html .= "<div class='card-body container'>";
+        
+            $html .= "<div class='row'>";
+        
+                $html .= "<div class='col-12 col-md-6'>";
+                    
+                    $html .= "<h4>Booking details:</h4>";
+                    
+                        $html .= "<table class='table table-sm'>";
+                        
+                            $html .= "<tbody>";
+                            
+                                $html .= "<tr>";
+                                    
+                                    $html .= "<td class='text-right border-0'>Film:</td>";
+                                    $html .= "<td class='font-weight-bold border-0'>" . $filmInfo[0]["film_name"] . " (" . $filmInfo[0]["film_rating"] . ")</td>";
+                                    
+                                $html .= "</tr>";
+                                
+                                $html .= "<tr>";
+                                
+                                    $html .= "<td class='text-right border-0'>Date & time:</td>";
+                                    $html .= "<td class='font-weight-bold border-0'>" . date("l jS F H:i", $showInfo["time"]) . "</td>";
+                                    
+                                $html .= "</tr>";
+                                
+                                $html .= "<tr>";
+                                
+                                    $html .= "<td class='text-right border-0'>Seats:</td>";
+                                    
+                                        $html .= "<td class='font-weight-bold border-0'>";
+                                                  
+                                                  foreach($seatInfo as $seat) {
+                                                      
+                                                      $html .= "Row " . $seat["seat_row_label"] . " - Seat " . $seat["seat_number"] . "<br/>";
+                                                      
+                                                  }
+                                                
+                                        $html .= "</td>";
+                                        
+                                $html .= "</tr>";
+                                
+                            $html .= "</tbody>";
+                            
+                        $html .= "</table>";
+                        
+                        $html .= "<hr class='d-block d-md-none'/>";
+                            
+                $html .= "</div>";
+                
+                $html .= "<div class='col-12 col-md-6'>";
+                    
+                    $html .= "<h4>Cost:</h4>";
+                    
+                        $html .= "<table class='table table-sm mx-auto' style='max-width:300px;'>";
+                        
+                            $html .= "<tbody>";
+                            
+                            $totalCost = 0;
+                                
+                                    foreach($details as $type => $data) {
+                                        
+                                        
+                                        $number = $data["count"];
+                                        
+                                        if($number >= 1) {
+                                        
+                                            for($x = 0; $x < $number; $x++) {
+                                                
+                                                $html .= "<tr>";
+                                                
+                                                    $html .= "<td class='border-0'>" . $data["label"] . "</td>";
+                                                    $html .= "<td class='border-0 text-right'>&pound;" . $data["cost"] . ".00</td>";
+                                            
+                                                $html .= "</tr>";
+                                                
+                                                $totalCost += $data["cost"];
+                                            }
+                                        
+                                        }
+      
+                                    }
+                                    
+                                    // Total cost
+                                    $html .= "<tr class='bg-secondary text-white'>";
+                                    
+                                        $html .= "<td class='border-0'>Total:</td>";
+                                        $html .= "<td class='border-0 text-right'>&pound;" . $totalCost . ".00</td>";
+     
+                                $html .= "</tbody>";
+                            
+                        $html .= "</table>";
+                
+                $html .= "</div>";
+                
+            $html .= "</div>";
+            
+        $html .= "</div>";    
+        
+        return $html;
+        
+    }
 
     public function buildSeatingPlan($show, $ticketsRequired) {
 
@@ -702,7 +998,7 @@ class cinema {
 
         if($availableSeats < $ticketsRequired) {
 
-            return "Not enough seats available.";
+            return false;
 
         }
 
@@ -810,6 +1106,19 @@ class cinema {
         }
         
         }
+        
+        // Loop through selected seats and encrypt ids
+        $preselectedTicketsReturn = array();
+        
+        if(isset($preselectedTickets["seats"])) {
+            
+            foreach($preselectedTickets["seats"] as $index => $seat) {
+                
+                $preselectedTicketsReturn[$index] = cipher::encrypt($seat);
+                
+            }
+            
+        }
 
         // STEP 8 - build the html
 
@@ -847,7 +1156,7 @@ class cinema {
                     $seatConfig = (($seat["status"] == "GREY") ? "seat-taken" : (($selectTicket) ? "seat-selected" : ""));
 
                     // Start of seat
-                    $html .= "<td class='screen-seat seat-" . $seatingSizes["$seat[seat_type]"] . " " . $seatConfig . "' data-seatId='" . $seat["id"] . "'>";
+                    $html .= "<td class='screen-seat seat-" . $seatingSizes["$seat[seat_type]"] . " " . $seatConfig . "' data-seatId='" . cipher::encrypt($seat["id"]) . "'>";
 
                         // Insert seat image
                         $html .= "<img src='/assets/images/seats/" . $seat["seat_type"] . "-seat_" . (($selectTicket) ? "RED" : $seat["status"]) . ".png'/><br/>";
@@ -878,6 +1187,8 @@ class cinema {
                 $html .= "<td colspan='0' class='text-center p-1'> <---- Scroll ----> </td>";
                 
             $html .= "</tr>";
+            
+            $preselectedTickets["seats"] = $preselectedTicketsReturn;
 
         return array(
             "html" => $html,
@@ -894,6 +1205,7 @@ class cinema {
         $showInfo = $this->getShowInfo($show);
         $validStatuses = implode(",", array(
             "'reserved'",
+            "'reserved_temp'",
             "'complete'",
             "'awaiting_payment'",
             "'GFC_ADMIN'"

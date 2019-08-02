@@ -5,8 +5,9 @@ $app->group("/film", function(){
     $this->get("/{filmId}", function($request, $response, $args) {
         
         $cinema = $this->get("cinema");
+        $filmId = cipher::decrypt($args["filmId"]);
         
-        $filmInfo = $cinema->getFilmData($args["filmId"]);
+        $filmInfo = $cinema->getFilmData($filmId);
         
         if(count($filmInfo) < 1) {
             
@@ -15,7 +16,7 @@ $app->group("/film", function(){
         }
         
         // Get showtimes for film
-        $showtimes = $cinema->getShowtimes($args["filmId"]);
+        $showtimes = $cinema->getShowtimes($filmId);
         
         $filmInfo["showtimes"] = $showtimes;
         

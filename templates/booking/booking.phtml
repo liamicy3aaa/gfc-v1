@@ -83,7 +83,7 @@ text-shadow:4px 2px 4px black;">
         <h1>Booking confirmed</h1>
         <br/>
         <div class="card mt-2">
-            <div class="card-header bg-light">
+            <!--<div class="card-header bg-light">
                 <p class="font-weight-bold h4 mt-2">Thanks for booking. A confirmation email has been sent to you.</p>
                 <p class="text-muted">Confirmation: WDFF32FD</p> 
             </div>
@@ -142,7 +142,7 @@ text-shadow:4px 2px 4px black;">
                     </div>
                 </div>
             
-            </div>
+            --></div>
         
         </div>
     </div>
@@ -150,14 +150,14 @@ text-shadow:4px 2px 4px black;">
 <div class="container container-fluid">
     <div id="bookingNavigation" class="btn-group d-flex mb-3">
         <button id="navigationBack" class="btn text-center w-100 btn-outline-secondary disabled" disabled="disabled">Back<br/><i class="fas fa-arrow-alt-circle-left"></i></button>
-        <button id="navigationNext" class="btn text-center w-100 btn-outline-secondary">Next<br/><i class="fas fa-arrow-alt-circle-right"></i></button>
+        <button id="navigationNext" class="btn text-center w-100 btn-outline-secondary"><span>Next</span><br/><i class="fas fa-arrow-alt-circle-right"></i></button>
     </div>
 </div>
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
 <script src="/assets/js/Cinema.js"></script>
 <script>
 Cinema.Init({
-    "show": <?php print $data["show"]["showId"];?>
+    "show": "<?php print $data["show"]["showId"];?>"
 });
 
 Cinema.startTicketSelection();

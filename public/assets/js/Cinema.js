@@ -48,6 +48,8 @@ var Cinema = {
     
     startTicketSelection: function() {
         
+        $("#selectedTicketsTotal").closest("strong").hide();
+
         $(".ticket-option").on("change", function(){
             
             let ticketType = $(this).attr("data-tickettype");
@@ -57,7 +59,6 @@ var Cinema = {
             if(numOfTickets >= 1) {
                 
                 ticket.count = parseInt(numOfTickets);
-                console.log(ticket);
             
             let cost = (numOfTickets * ticket.cost);
             let box = ".ticket-option-" + ticket.id;
@@ -112,9 +113,7 @@ var Cinema = {
                 dataArray[ticket.id] =  parseInt($(this).val());
                 
             });
-            
-            console.log(dataArray);
-            
+
             let data = {
                 "show": Cinema.settings.show,
                 "tickets": dataArray
@@ -140,6 +139,8 @@ var Cinema = {
                         $preSelected = response.seating.selected.seats;
                     }
                     
+                    Cinema.settings.requiredSelection = response.seating.required;
+
                     Cinema.startSeatSelection(response.seating.required, $preSelected);
                     
                     $("#navigationBack").removeAttr("disabled");
@@ -171,7 +172,11 @@ var Cinema = {
                         case "invalidTicketTotal":
                             alert("At least one ticket must be selected");
                             break;
-                            
+
+                        case "notEnoughSeats":
+                            alert(response.error_desc + ". Please choose a smaller amount of seats.");
+                            break;
+
                         default:
                             alert("Unknown error occurred");
                             break;    
@@ -350,11 +355,11 @@ var Cinema = {
             
         }
         }
-        
-        Cinema.updateSeatSelectionCount(required);
-        
+
         console.log(Cinema.settings.selectedSeats);
         
+        Cinema.updateSeatSelectionCount(required);
+
         $(".screen-seat img").unbind("click").on("click", function(){
 
             
@@ -426,6 +431,11 @@ var Cinema = {
                     Cinema.settings.bookingId = response.bookingId;
                     $("#bookingStep2").addClass("d-none");
                     $("#bookingStep3").removeClass("d-none");
+                    $("#navigationNext span").html("Confirm Booking");
+                    $("#navigationNext i").removeClass("fa-arrow-alt-circle-right");
+                    $("#navigationNext i").addClass("fa-calendar-check");
+
+                    console.log("Temporary reservation saved");
 
                     Cinema.startDetailsSection();
 
@@ -433,13 +443,17 @@ var Cinema = {
 
                         $("#bookingStep2").removeClass("d-none");
                         $("#bookingStep3").addClass("d-none");
-                        
+                        $("#navigationNext span").html("Next");
+                        $("#navigationNext i").removeClass("fa-calendar-check");
+                        $("#navigationNext i").addClass("fa-arrow-alt-circle-right");
+
+
                         $.ajax({
                             url: "/booking/ajax/cancel/" + response.bookingId,
                             method: "POST",
                             success: function(response) {
                                 
-                                alert("cancellation successful");
+                                console.log("reservation cancelled");
                                 
                             },
                             error: function(err) {
@@ -450,7 +464,7 @@ var Cinema = {
                             
                         });
                         
-                        Cinema.startSeatSelection(Cinema.settings.selectedCount, Cinema.settings.selectedSeats);
+                        Cinema.startSeatSelection(Cinema.settings.requiredSelection, Cinema.settings.selectedSeats);
                         
                         $("#navigationBack").unbind("click").on("click", function(){
                             
@@ -488,11 +502,7 @@ var Cinema = {
         function processVal(errors) {
             
             for(x = 0; x < errors.length; x++) {
-                
-                console.log(errors[x].el);
-                
-                //console.log(errors[x].el + " - " + errors[x].error);
-                
+
                 $(errors[x].el).addClass("is-invalid");
                 
             }
@@ -601,6 +611,7 @@ var Cinema = {
                 data: data,
                 success: function(response) {
                     
+                    $("#bookingStep4 .card").html(response.confirmation);
                     $("#bookingStep4").removeClass("d-none");
                     $("#bookingStep3").addClass("d-none");
                     $("#bookingNavigation").removeClass("d-flex");
