@@ -78,12 +78,25 @@ $container['notAllowedHandler'] = function ($container) {
 // UI Renderer
 $phpView = new \Slim\Views\PhpRenderer('../templates/', [
     "title" => $_SESSION["system"]["name"],
-    "__webTitle" => $_SESSION["system"]["name"]
+    "__webTitle" => $_SESSION["system"]["name"],
+    "_alerts" => notifications::display()
     ]);
 
 $phpView->setLayout("layout.phtml");
 
 $container['view'] = $phpView;
+
+// Manage view
+
+$manageView = new \Slim\Views\PhpRenderer('../templates/Manage/', [
+    "title" => $_SESSION["system"]["name"],
+    "__webTitle" => $_SESSION["system"]["name"],
+    "_alerts" => notifications::display()
+    ]);
+    
+    $manageView->setLayout("index.phtml");
+    
+    $container["manageView"] = $manageView;
 
 //Override the default Not Found Handler after App
 unset($app->getContainer()['notFoundHandler']);
