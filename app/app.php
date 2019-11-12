@@ -48,6 +48,12 @@ $container["cinema"] = function($container) {
 
 };
 
+$container["user"] = function($container) {
+    
+  return new user($container["db"]);  
+    
+};
+
 $container['notAllowedHandler'] = function ($container) {
     return function ($request, $response, $methods) use ($container) {
 
@@ -78,8 +84,7 @@ $container['notAllowedHandler'] = function ($container) {
 // UI Renderer
 $phpView = new \Slim\Views\PhpRenderer('../templates/', [
     "title" => $_SESSION["system"]["name"],
-    "__webTitle" => $_SESSION["system"]["name"],
-    "_alerts" => notifications::display()
+    "__webTitle" => $_SESSION["system"]["name"]
     ]);
 
 $phpView->setLayout("layout.phtml");
@@ -90,8 +95,7 @@ $container['view'] = $phpView;
 
 $manageView = new \Slim\Views\PhpRenderer('../templates/Manage/', [
     "title" => $_SESSION["system"]["name"],
-    "__webTitle" => $_SESSION["system"]["name"],
-    "_alerts" => notifications::display()
+    "__webTitle" => $_SESSION["system"]["name"]
     ]);
     
     $manageView->setLayout("index.phtml");
