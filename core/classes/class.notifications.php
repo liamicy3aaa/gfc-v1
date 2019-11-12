@@ -3,42 +3,54 @@
     class notifications {
 
         
-        public static function add($type = "info", $content) {
+        public static function add($type = "info", $content, $settings) {
             
-            if(!isset($_SESSION["_alerts"])) {
-                
-                $_SESSION["_alerts"] = array();
+            if(!isset($_SESSION["_notifications"])) {
+                  //exit("STOPPED");
+                $_SESSION["_notifications"] = array();
                 
             }
             
-            $_SESSION["_alerts"][] = array(
-                                "type" => $type,
-                                "content" => $content                                                           
-                                 );            
+            $note = array(
+                "type" => $type,
+                "content" => $content                                                           
+            );
+            
+            if(isset($settings["dismiss"])) {
+                
+                $note["dismiss"] = false;
+                
+            }
+            
+            $_SESSION["_notifications"][] = $note; 
             
         }
         
         public static function display() {
             
-            if(isset($_SESSION["_alerts"]) && count($_SESSION["_alerts"]) >= 1) {
+            if(isset($_SESSION["_notifications"]) && count($_SESSION["_notifications"]) >= 1) {
                 
                 $html = "";
                 
-                foreach($_SESSION["_alerts"] as $index => $alert) {
+                foreach($_SESSION["_notifications"] as $index => $alert) {
                     
-                    $html .= "<div class='m-0 alert alert-" . $alert["type"] . " text-center alert-dismissible fade show' role='alert'>";
+                    $html .= "<div class='m-0 alert alert-" . $alert["type"] . " text-center " . ((isset($alert["dismiss"])) ? "alert-dismissible " : "") . "fade show' role='alert'>";
                     
                         $html .= $alert["content"];
                         
-                        $html .= "<button type='button' class='close' data-dismiss='alert' aria-label='Close'>";
+                        if(isset($alert["dismiss"])) {
+                       
+                            $html .= "<button type='button' class='close' data-dismiss='alert' aria-label='Close'>";
+                            
+                                $html .= "<span aria-hidden='true'>&times;</span>";
+                            
+                            $html .= "</button>";
                         
-                            $html .= "<span aria-hidden='true'>&times;</span>";
-                        
-                        $html .= "</button>";
+                        }
                         
                     $html .= "</div>";
                     
-                    unset($_SESSION["_alerts"][$index]);            
+                    unset($_SESSION["_notifications"][$index]);            
                     
                 }
                 
