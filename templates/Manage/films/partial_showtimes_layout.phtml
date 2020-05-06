@@ -1,0 +1,20 @@
+<head>
+    <link rel="stylesheet" href="/assets/css/seat_layout.css">
+</head>
+<div class="container container-fluid">
+    <div class="screen-container text-center mx-auto m-0 m-md-5">
+        <p>Click on a seat to view the booking or to create a new booking</p>
+        <table class="screen mx-auto" style="max-width:600px;">
+            <tbody>
+            %LAYOUT%
+            </tbody>
+        </table>
+    </div>
+</div>
+<script src="/assets/js/Seatpicker.js"></script>
+<script>
+    Cinema.startShowBookingViewer({
+        "filmId": "%ID%"
+    });
+
+</script>

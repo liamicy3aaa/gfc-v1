@@ -17,19 +17,29 @@
 
   <!-- Custom styles for this template-->
   <link href="/assets/Manage/css/sb-admin-2.min.css" rel="stylesheet">
+  <link href="/assets/css/bootstrap-datepicker3.min.css" rel="stylesheet">
     <!-- Bootstrap core JavaScript-->
     <script src="/assets/Manage/vendor/jquery/jquery.min.js"></script>
     <script src="/assets/Manage/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Modal Loader -->
+    <script src="/assets/Manage/js/modal.js"></script>
+    <!-- Cinema -->
+    <script src="/assets/Manage/js/cinema.js"></script>
+    <script src="/assets/js/bootstrap-datepicker.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/timepicker@1.13.0/jquery.timepicker.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/timepicker@1.13.0/jquery.timepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.25.0/slimselect.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.25.0/slimselect.min.css" rel="stylesheet"></link>
 
 </head>
 
-<body id="page-top">
+<body id="page-top" class="sidebar-toggled">
 
   <!-- Page Wrapper -->
   <div id="wrapper">
 
     <!-- Sidebar -->
-    <ul class="navbar-nav bg-dark sidebar sidebar-dark accordion" id="accordionSidebar">
+    <ul class="navbar-nav bg-dark sidebar sidebar-dark accordion toggled" id="accordionSidebar">
 
       <!-- Sidebar - Brand -->
       <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/Manage">
@@ -94,9 +104,22 @@
 
       <!-- Heading -->
       <div class="sidebar-heading">
-        Addons
+        Options
       </div>
-
+      
+        <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTools" aria-expanded="true" aria-controls="collapseTools">
+          <i class="fas fa-fw fa-folder"></i>
+          <span>Tools</span>
+        </a>
+        <div id="collapseTools" class="collapse" aria-labelledby="headingTools" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Tools:</h6>
+            <a class="collapse-item" href="/Manage/tools/ticketPOS">Ticket POS</a>
+            <a class="collapse-item" href="/Manage/tools/timeline">Scheduler</a>
+          </div>
+        </div>
+      </li>
       <!-- Nav Item - Pages Collapse Menu -->
       <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePages" aria-expanded="true" aria-controls="collapsePages">
@@ -115,13 +138,6 @@
             <a class="collapse-item" href="blank.html">Blank Page</a>
           </div>
         </div>
-      </li>
-
-      <!-- Nav Item - Charts -->
-      <li class="nav-item">
-        <a class="nav-link" href="charts.html">
-          <i class="fas fa-fw fa-chart-area"></i>
-          <span>Charts</span></a>
       </li>
 
       <!-- Nav Item - Tables -->
@@ -254,7 +270,7 @@
                 </h6>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                   <div class="dropdown-list-image mr-3">
-                    <img class="rounded-circle" src="https://source.unsplash.com/fn_BT9fwg_E/60x60" alt="">
+                    <img class="rounded-circle" src="/assets/Manage/img/users/example_profile.jpg" alt="">
                     <div class="status-indicator bg-success"></div>
                   </div>
                   <div class="font-weight-bold">
@@ -264,7 +280,7 @@
                 </a>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                   <div class="dropdown-list-image mr-3">
-                    <img class="rounded-circle" src="https://source.unsplash.com/AU4VPcFN4LE/60x60" alt="">
+                    <img class="rounded-circle" src="/assets/Manage/img/users/example_profile.jpg" alt="">
                     <div class="status-indicator"></div>
                   </div>
                   <div>
@@ -274,7 +290,7 @@
                 </a>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                   <div class="dropdown-list-image mr-3">
-                    <img class="rounded-circle" src="https://source.unsplash.com/CS2uCrpNzJY/60x60" alt="">
+                    <img class="rounded-circle" src="/assets/Manage/img/users/example_profile.jpg" alt="">
                     <div class="status-indicator bg-warning"></div>
                   </div>
                   <div>
@@ -284,7 +300,7 @@
                 </a>
                 <a class="dropdown-item d-flex align-items-center" href="#">
                   <div class="dropdown-list-image mr-3">
-                    <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60" alt="">
+                    <img class="rounded-circle" src="/assets/Manage/img/users/example_profile.jpg" alt="">
                     <div class="status-indicator bg-success"></div>
                   </div>
                   <div>
@@ -302,7 +318,7 @@
             <li class="nav-item dropdown no-arrow">
               <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php print $data["_user"]["name"];?></span>
-                <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60">
+                <img class="img-profile rounded-circle" src="/assets/Manage/img/users/example_profile.jpg">
               </a>
               <!-- Dropdown - User Information -->
               <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -331,6 +347,8 @@
         </nav>
         <!-- End of Topbar -->
 
+         <?php print notifications::display();?>
+        
         <!-- Begin Page Content -->
 			<?=$content?>
       <!-- End of Main Content -->
@@ -381,6 +399,7 @@
 
   <!-- Custom scripts for all pages-->
   <script src="/assets/Manage/js/sb-admin-2.min.js"></script>
+  <script>$('.datepicker').datepicker();</script>
 
 
 

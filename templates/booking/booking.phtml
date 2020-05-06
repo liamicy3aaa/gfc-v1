@@ -19,7 +19,7 @@ text-shadow:4px 2px 4px black;">
 <div class="mt-5 mb-2 mx-3 d-none">
     <h3>Booking screen</h3>
 </div>
-<div class="container container-fluid mb-4">
+<div id="bookingSteps" class="container container-fluid mb-4">
     <div id="bookingStep1" class="m-3">
         <div class="card">
         <div class="card-header">
@@ -49,7 +49,7 @@ text-shadow:4px 2px 4px black;">
     <div class="card">
         <div class="card-header">
             <p>Please select seats for:</p>
-            <p style="font-weight:bold;"><?php print $data["show"]["film_name"]; ?> (<?php print $data["show"]["film_rating"]; ?>) at <?php print date("H:i", $data["show"]["time"]);?> on <?php print date("l jS F", $data["show"]["time"]);?> showing in screen 1</p>
+            <p style="font-weight:bold;"><?php print $data["show"]["film_name"]; ?> (<?php print $data["show"]["film_rating"]; ?>) at <?php print date("H:i", $data["show"]["time"]);?> on <?php print date("l jS F", $data["show"]["time"]);?> showing in screen <?php print $data["show"]["screen_name"];?></p>
             <p>Remaining: <span class="text-bold seats-remaining">%</span></p>
         </div>
         <div class="card-body">
@@ -68,7 +68,6 @@ text-shadow:4px 2px 4px black;">
                 <p class="h4" >Your details</p>
             </div>
             <div class="card-body booking-details-screen">
-            <?php print $data["details"]; ?>
             </div>
         </div>
         <div class="card-body col-sm-8 mx-auto">
@@ -80,71 +79,23 @@ text-shadow:4px 2px 4px black;">
         </div>
     </div>
     <div id="bookingStep4" class="m-3 d-none">
+        <h1>Payment</h1>
+        <br/>
+        <div class="card mt-2">
+        </div>
+    </div>
+</div>
+    <div id="bookingStep5" class="m-3 d-none">
         <h1>Booking confirmed</h1>
         <br/>
         <div class="card mt-2">
-            <!--<div class="card-header bg-light">
-                <p class="font-weight-bold h4 mt-2">Thanks for booking. A confirmation email has been sent to you.</p>
-                <p class="text-muted">Confirmation: WDFF32FD</p> 
-            </div>
-            <div class="card-body container">
-                <div class="row">
-                    <div class="col-12 col-md-6">
-                    <h4>Booking details:</h4>
-                        <table class="table table-sm">
-                            <tbody>
-                                <tr>
-                                    <td class="text-right border-0">Film:</td>
-                                    <td class="font-weight-bold border-0">Rocketman (15)</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-right border-0">Date & time:</td>
-                                    <td class="font-weight-bold border-0">24/07/2019 20:30</td>
-                                </tr>
-                                <tr>
-                                    <td class="text-right border-0">Seats:</td>
-                                    <td class="font-weight-bold border-0">
-                                        Row 1 - Seat 7<br/>
-                                        Row 1 - Seat 8<br/>
-                                        Row 1 - Seat 9
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <hr class="d-block d-md-none"/>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <h4>Cost:</h4>
-                        <table class="table table-sm mx-auto" style="max-width:300px;">
-                            <tbody>
-                                <tr>
-                                    <td class="border-0">Adult</td>
-                                    <td class="border-0 text-right">&pound;8.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="border-0">Adult</td>
-                                    <td class="border-0 text-right">&pound;8.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="border-0">Adult</td>
-                                    <td class="border-0 text-right">&pound;8.00</td>
-                                </tr>
-                                <tr>
-                                    <td class="border-0">Adult</td>
-                                    <td class="border-0 text-right">&pound;8.00</td>
-                                </tr>
-                                <tr class="bg-secondary text-white">
-                                    <td class="border-0">Total:</td>
-                                    <td class="border-0 text-right">&pound;32.00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            
-            --></div>
-        
         </div>
+    </div>
+    <div class='Bkloader text-center mb-5 mt-5' style="display:none;">
+        <div class="spinner-grow text-secondary" style="width: 4rem; height: 4rem;" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <h5 class="mt-5">Processing booking...</h5>
     </div>
 </div>
 <div class="container container-fluid">
@@ -153,11 +104,14 @@ text-shadow:4px 2px 4px black;">
         <button id="navigationNext" class="btn text-center w-100 btn-outline-secondary"><span>Next</span><br/><i class="fas fa-arrow-alt-circle-right"></i></button>
     </div>
 </div>
+<script src="/assets/js/Seatpicker.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
-<script src="/assets/js/Cinema.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="/assets/js/Payments.js"></script>
 <script>
 Cinema.Init({
-    "show": "<?php print $data["show"]["showId"];?>"
+    "show": "<?php print $data["show"]["showId"];?>",
+    "tickets": <?php print $data["ticketConfig"]; ?>
 });
 
 Cinema.startTicketSelection();

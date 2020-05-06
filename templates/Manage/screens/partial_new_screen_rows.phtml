@@ -1,0 +1,29 @@
+    <div class="container my-2">
+        <div class="row">
+            <div class="col">
+                <label for="rows">Rows</label>
+                <input id="rows" class="form-control" type="number" min="1" max="26" name="rows" placeholder="Number of rows in the screen..."/>
+            </div>
+            <div class="col">
+                <label for="rows">seats per row</label>
+                <input id="seatsPerRow" class="form-control" type="number" min="1" max="26" name="seatsPerRow" placeholder="Number of seats in each row..."/>
+            </div>
+        </div>
+        <div class="row my-2">
+            <div class="col">
+                <label for="seatLabel">Seat Label</label>
+                <select id='seatLabel' class="form-control" name="seat_label" onchange="if($('#seatLabel').val() == 'custom'){ $('#seatLabelCustom').show();} else { $('#seatLabelCustom').hide()}">
+                    <option value="alphabet">Alphabet (A, B, C...)</option>
+                </select>
+                <small id="seatLabelHelpBlock" class="form-text text-muted">
+                    This is the label that appears in front of each seat number (Eg. <span class="font-weight-bolder text-dark">A</span>1, <span class="text-dark font-weight-bolder">A</span>2 etc)
+                </small>
+            </div>
+        </div>
+        <div class="row my-3">
+            <div class="col">
+                <button id="addRowsSubmit" class="btn btn-block btn-success mb-1">Add rows</button>
+            </div>
+        </div>
+        <p class="small text-center">You will be able to configure each row once they have been created.</p>
+    </div>

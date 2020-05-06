@@ -1,0 +1,81 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.3/croppie.min.css">
+<div class="custom-file w-50">
+    <input id='imageUpload' type="file" class="custom-file-input" id="customFile" name="prof-upload" accept="image/x-png,image/gif,image/jpeg">
+    <label class="custom-file-label" for="customFile">Choose image</label>
+</div><br/>
+<div id='imagePreview' class="mx-auto" style='width:350px; margin-top:30px'></div>
+<button id='imageSaveClick' class='btn btn-small btn-block btn-success'>Save Image</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.3/croppie.min.js"></script>
+<script>
+
+    $("#imageSaveClick").attr("disabled", "true");
+    $("#imageSaveClick").addClass("disabled");
+
+    $('#imageUpload').on('change', function(){
+
+        $('.custom-file').hide();
+        $("#imageSaveClick").removeAttr("disabled");
+        $("#imageSaveClick").removeClass("disabled");
+
+        var reader = new FileReader();
+        reader.onload = function (event) {
+            /*$.image_crop.croppie('bind', {
+                url: event.target.result
+            })*/
+
+            $.image_crop = $('#imagePreview').croppie({
+                url: event.target.result,
+                enableExif: true,
+                viewport: {
+                    width:341,
+                    height:512,
+                },
+                boundary:{
+                    width:400,
+                    height:600
+                }
+            }).then(function(){
+                console.log('jQuery bind complete');
+            });
+        }
+        reader.readAsDataURL(this.files[0]);
+    });
+
+    $('#imageSaveClick').click(function(event){
+
+        if(confirm("The image is correct?") === false) {
+
+            return false;
+
+        }
+
+        $("#imageSaveClick").html("Processing...");
+        $("#imageSaveClick").attr("disabled", "true");
+        $("#imageSaveClick").addClass("disabled");
+
+        $('#imagePreview').croppie('result', {
+            type: 'canvas',
+            size: 'viewport'
+        }).then(function(response){
+
+            $.ajax({
+                url:"{POSTURL}",
+                type: "POST",
+                enctype: 'multipart/form-data',
+                data:{"image": response},
+                success:function(data)
+                {
+                    updateModal("<h3>Image successfully changed</h3><hr/>");
+                },
+                error: function(data){
+
+                    updateModal("<h3 style='color:red;'>An error occurred</h3><br/><hr/><pre>" + data.error + "</pre>");
+                    console.log(data);
+
+                }
+            });
+        })
+    });
+
+
+</script>

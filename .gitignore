@@ -7,3 +7,7 @@
 .idea/workspace.xml
 app/db.ini
 app/keys.ini
+app/email.ini
+app/stripe.ini
+.DS_Store
+public/.well-known/*

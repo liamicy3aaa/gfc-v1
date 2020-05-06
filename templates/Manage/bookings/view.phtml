@@ -1,0 +1,68 @@
+<head>
+    <link href="/assets/Manage/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+</head>
+<div class="container-fluid">
+<!-- Page Heading -->
+<a href='/Manage/bookings' class="btn btn-info btn-sm mb-2"> < Back</a>
+<h1 class="h3 mb-0 text-gray-800 mb-4">Manage Booking</h1>
+    <div class="row">  
+         <div class="col-12 col-lg-9">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    Booking Details
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                          <div class="dropdown-header">Options</div>
+                          <a class="dropdown-item" href="#">Edit Details</a>
+                          <a class="dropdown-item" href="#" onclick="Cinema.resendConfirmationEmail('get', '<?php print $data['bookingId'];?>');">Resend Confirmation Email</a>
+                          <?php if($data["booking"]["booking_status"] != "cancelled") {?>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-danger" onclick="Cinema.cancelBooking('<?php print $data["bookingId"];?>');" href="#">Cancel Booking</a>
+                            <?php } ?>
+                        </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                <?php print $data["details"];?>
+                </div>
+            </div>
+         </div>
+         <div class="col-12 col-lg-3 order-first order-lg-last">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    Status
+                </div>
+                <div class="card-body bg-warning"><br/><?php print strtoupper($data["booking"]["booking_status"]);?><br/><br/></div>
+            </div>
+         </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    Selected tickets / seats
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover table-bordered table-striped table-responsive-md">
+                        <thead>
+                            <th></th>
+                            <th>Item</th>
+                            <th>Units</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th class='d-none d-sm-table-cell'>Number of seats</th>
+                            <th>Seats</th>
+                        </thead>
+                        <tbody>
+                            <?php print $data["tickets"]; ?>
+                        </tbody>
+                    </table>
+                    <h6><strong>Total cost: &pound;<?php print $data["ticketTotal"];?></strong></h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -3,7 +3,7 @@
     class notifications {
 
         
-        public static function add($type = "info", $content, $settings) {
+        public static function add($type = "info", $content, $settings = array()) {
             
             if(!isset($_SESSION["_notifications"])) {
                   //exit("STOPPED");

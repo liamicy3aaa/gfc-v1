@@ -1,0 +1,12 @@
+<select id="refundType" class="form-control my-2" name="refundType">
+    <option value="full">Full Refund</option>
+    <option value="partial">Partial Refund</option>
+    <option value="none">No Refund</option>
+</select>
+<div class="input-group mb-3" id="refundAmountContainer" style="display:none;">
+    <div class="input-group-prepend">
+        <span class="input-group-text">£</span>
+    </div>
+    <input id="refundAmount" class="form-control" type="number" name="refundAmount" min="0.30" step="0.10" value="{TOTAL}" max="{TOTAL}" />
+</div>
+<button class='btn btn-block btn-danger cancelBtn mt-1'>Confirm cancellation</button>

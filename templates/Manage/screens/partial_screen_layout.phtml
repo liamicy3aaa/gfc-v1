@@ -1,0 +1,55 @@
+<head>
+    <link rel="stylesheet" href="/assets/css/seat_layout.css">
+</head>
+<div class="container container-fluid">
+    <div class="screen-container text-center mx-auto m-0 m-md-5">
+        <table class="screen mx-auto" style="max-width:500px;">
+            <tbody>
+                %LAYOUT%
+            </tbody>
+        </table>
+    </div>
+</div>
+<script src="/assets/js/Seatpicker.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+Cinema.startScreenManager({
+    screenId: "%SCREENID%"
+});
+    $(".screen tr").prepend("<td colspan='1' class='screen-manage seat-standard'><a class='text-secondary' href='javascript:void(0)'><i style='max-width:30px;' class='fas fa-cog'></i></a></td>");
+    $(".screen tr.not-sortable .screen-manage a").hide();
+    $(".screen-manage a").on("click", function () {
+
+        var row = $(this).closest("tr").attr("data-rowid");
+
+        $(this).closest("a").popover({
+            "title": "Options",
+            "template": '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-body p-0"></div></div>',
+            "content": '<div class=\'list-group-flush mx-0\'><a href="Javascript:void(0);" class="list-group-item list-group-item-action start-sortable" style="cursor:pointer;">Re-order</a><a href="#" class="list-group-item list-group-item-action text-danger">Remove</a></div>',
+            "trigger": "focus",
+            "html": true,
+            "placement": "left"
+        });
+
+        $(this).popover("show");
+        $(".start-sortable").unbind().on("click", function(){
+            
+            Cinema.startScreenSorting('%SCREENID%');
+            
+        });
+
+        //showModal("Edit row " + row + "", "TEST EDIT ROW");
+
+
+    });
+
+    
+    /*$(".screen-seat").on("click", function(){
+        
+        var seatId = $(this).attr("data-seatid");
+        
+        showModal("Seat Config", seatId, {"size":"sm", "vcenter":true});
+        
+    }); */
+    
+    </script>

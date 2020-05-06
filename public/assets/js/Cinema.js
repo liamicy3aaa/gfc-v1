@@ -8,32 +8,6 @@ var Cinema = {
         
         Cinema.settings.navWarn = true;
         Cinema.preventUnload();
-        
-        Cinema.settings.tickets = {
-            
-            "Adult": {
-                "id": 1,
-                "cost": 8.00,
-                "count": 0
-            },
-            "Concession/OAP": {
-                "id": 2,
-                "cost": 7.00,
-                "count": 0
-            },
-            "Child (16 & under)": {
-                "id": 3,
-                "cost": 6.00,
-                "count": 0
-            },
-            "Family (2 adults + 2 children)": {
-                "id": 4,
-                "cost": 14.00,
-                "count": 0
-            }
-            
-        };
-        
     },
     
     preventUnload: function() {
@@ -61,12 +35,13 @@ var Cinema = {
                 ticket.count = parseInt(numOfTickets);
             
             let cost = (numOfTickets * ticket.cost);
-            let box = ".ticket-option-" + ticket.id;
+            let box = ".ticket-option-" + ticketType;
+
             $(box).html("&pound;" + cost + ".00");
             
             } else {
                 
-                $(".ticket-option-" + ticket.id).html("");
+                $(".ticket-option-" + ticketType).html("");
                 
             }
                 Cinema.settings.selectedCount = 0;
@@ -110,7 +85,7 @@ var Cinema = {
                 let ticketType = $(this).attr("data-tickettype");
                 let ticket = Cinema.settings.tickets[ticketType];
                 
-                dataArray[ticket.id] =  parseInt($(this).val());
+                dataArray[ticketType] =  parseInt($(this).val());
                 
             });
 
@@ -360,52 +335,65 @@ var Cinema = {
         
         Cinema.updateSeatSelectionCount(required);
 
-        $(".screen-seat img").unbind("click").on("click", function(){
+        //$(".screen-seat img").unbind("click").on("click", function(){
 
-            
-            if($(this).closest("td").hasClass("seat-taken")) {
+            Seatpicker.start({
+                ignoreSpaces: true,
+                seatOnClick: function(selector, seatId) {
                 
-                alert("Seat taken");
-                return;
-            }
-            
-            let current = $(this).closest("td").hasClass("seat-selected");
-            
-            if(current) {
-                
-                var seatCheck = $(this).closest("td").attr("data-seatid");
-                
-                Cinema.settings.selectedSeats = Cinema.settings.selectedSeats.filter(function(elem){
+                    if(selector.closest("td").hasClass("seat-taken")) {
                     
-                    return elem != seatCheck; 
-                    
-                });
-                
-                Cinema.updateSeatSelectionCount(required);
-                
-                $(this).closest("td").removeClass("seat-selected");
-                $(this).closest("img").attr("src", "/assets/images/seats/1-seat_GREEN.png");
-                
-            } else {
-                
-                if(Cinema.settings.selectedSeats.length == required) {
-                    
-                    alert("Maximum number of seats selected for your ticket selection");
+                    alert("Seat taken");
                     return;
-                                                                  
+                    
+                    }
+                
+                    let current = selector.closest("td").hasClass("seat-selected");
+                
+                    if(current) {
+                    
+                        var seatCheck = selector.closest("td").attr("data-seatid");
+                    
+                        Cinema.settings.selectedSeats = Cinema.settings.selectedSeats.filter(function(elem){
+                        
+                        return elem != seatCheck; 
+                        
+                        });
+                    
+                        Cinema.updateSeatSelectionCount(required);
+                    
+                        selector.closest("td").removeClass("seat-selected");
+                        var img = selector.closest("img").attr("src");
+                        var imgUrl = img.replace("RED","GREEN");
+                        selector.closest("img").attr("src", imgUrl);
+                    
+                    } else {
+                    
+                        if(Cinema.settings.selectedSeats.length == required) {
+                        
+                            alert("Maximum number of seats selected for your ticket selection");
+                            return;
+                                                                      
+                        }
+                    
+                        Cinema.settings.selectedSeats.push(selector.closest("td").attr("data-seatid"));
+                    
+                        Cinema.updateSeatSelectionCount(required);
+                    
+                        var img = selector.closest("img").attr("src");
+                        var imgUrl = img.replace("GREEN","RED");
+                    
+                    selector.closest("td").addClass("seat-selected");
+                    selector.closest("img").attr("src", imgUrl);  
+                    
+                    }
                 }
-                
-                Cinema.settings.selectedSeats.push($(this).closest("td").attr("data-seatid"));
-                
-                Cinema.updateSeatSelectionCount(required);
-                
-              $(this).closest("td").addClass("seat-selected");
-              $(this).closest("img").attr("src", "/assets/images/seats/1-seat_RED.png");  
-                
-            }
+            });
             
             
-        });
+            
+            
+       // });
 
         $("#navigationNext").unbind("click").on("click", function() {
 
@@ -439,45 +427,6 @@ var Cinema = {
 
                     Cinema.startDetailsSection();
 
-                    $("#navigationBack").unbind("click").on("click", function(){
-
-                        $("#bookingStep2").removeClass("d-none");
-                        $("#bookingStep3").addClass("d-none");
-                        $("#navigationNext span").html("Next");
-                        $("#navigationNext i").removeClass("fa-calendar-check");
-                        $("#navigationNext i").addClass("fa-arrow-alt-circle-right");
-
-
-                        $.ajax({
-                            url: "/booking/ajax/cancel/" + response.bookingId,
-                            method: "POST",
-                            success: function(response) {
-                                
-                                console.log("reservation cancelled");
-                                
-                            },
-                            error: function(err) {
-                                
-                                alert("Cancellation failed");
-                                
-                            }
-                            
-                        });
-                        
-                        Cinema.startSeatSelection(Cinema.settings.requiredSelection, Cinema.settings.selectedSeats);
-                        
-                        $("#navigationBack").unbind("click").on("click", function(){
-                            
-                            $("#bookingStep1").removeClass("d-none");
-                            $("#bookingStep2").addClass("d-none");
-                            $("#navigationBack").addClass("disabled");
-                            $("#navigationBack").attr("disabled", "disabled");
-                            Cinema.startTicketSelection();
-                            
-                        });
-
-                    });
-
                 },
                 error: function(err, status) {
 
@@ -496,6 +445,46 @@ var Cinema = {
     },
     
     startDetailsSection: function() {
+
+        $("#navigationBack").unbind("click").on("click", function(){
+
+            $("#bookingStep2").removeClass("d-none");
+            $("#bookingStep3").addClass("d-none");
+            $("#navigationNext span").html("Next");
+            $("#navigationNext i").removeClass("fa-calendar-check");
+            $("#navigationNext i").addClass("fa-arrow-alt-circle-right");
+
+
+            $.ajax({
+                url: "/booking/ajax/cancel/" + Cinema.settings.bookingId,
+                method: "POST",
+                success: function(response) {
+
+                    console.log("reservation cancelled");
+                    Cinema.settings.bookingId = "";
+
+                },
+                error: function(err) {
+
+                    alert("Cancellation failed");
+
+                }
+
+            });
+
+            Cinema.startSeatSelection(Cinema.settings.requiredSelection, Cinema.settings.selectedSeats);
+
+            $("#navigationBack").unbind("click").on("click", function(){
+
+                $("#bookingStep1").removeClass("d-none");
+                $("#bookingStep2").addClass("d-none");
+                $("#navigationBack").addClass("disabled");
+                $("#navigationBack").attr("disabled", "disabled");
+                Cinema.startTicketSelection();
+
+            });
+
+        });
         
         var continueProcess = false;
         
@@ -603,6 +592,9 @@ var Cinema = {
             };
             
             console.log(data);
+
+            $(".Bkloader").show();
+            $("#bookingStep3").addClass("d-none");
             
             $.ajax({
                 url: "/booking/ajax/details/" + Cinema.settings.bookingId,
@@ -610,19 +602,23 @@ var Cinema = {
                 dataType: "JSON",
                 data: data,
                 success: function(response) {
+
+                    Cinema.startPayment();
+                    $("#bookingStep5 .card").html(response.confirmation);
+                    $("#navigationNext").attr("disabled", "disabled");
+                    $("#navigationNext").addClass("disabled");
                     
-                    $("#bookingStep4 .card").html(response.confirmation);
-                    $("#bookingStep4").removeClass("d-none");
-                    $("#bookingStep3").addClass("d-none");
-                    $("#bookingNavigation").removeClass("d-flex");
-                    $("#bookingNavigation").addClass("d-none");
-                    
-                    Cinema.settings.navWarn = false;
+                    //Cinema.settings.navWarn = false;
                     
                 },
                 error: function(err) {
                     
                     let response = JSON.parse(err.responseText);
+
+                    $("#bookingStep3").removeClass("d-none");
+                    $(".Bkloader").hide();
+                    $("#bookingNavigation").removeClass("d-none");
+                    $("#bookingNavigation").addClass("d-flex");
                     
                     alert(response.error_desc);
                     console.log(response);
@@ -630,48 +626,51 @@ var Cinema = {
             });
             
         });
-           
-        /*$("#navigationNext").unbind("click").on("click", function(){
-            
-            let con = true;
-            
-            if($("#name").val().length <= 1) {
-                
-                $("#name").addClass("is-invalid");
-                con = false;
-                
+
+    },
+    startPayment: function() {
+
+        $("#navigationBack").unbind("click").on("click", function(){
+
+            $("#bookingStep4").addClass("d-none");
+            $("#bookingStep3").removeClass("d-none");
+            $("#navigationNext").removeAttr("disabled");
+            $("#navigationNext").removeClass("disabled");
+            Cinema.startDetailsSection();
+
+        });
+
+        $.ajax({
+            url: "/payments/new/" + Cinema.settings.bookingId,
+            method: "GET",
+            success: function(response) {
+
+                $("#bookingStep4 .card").html(response.html);
+                $(".Bkloader").hide();
+                $("#bookingStep4").removeClass("d-none");
+                Payments.start(response.public_key, response.transaction, {
+                    onComplete: function(){
+
+                        $("#bookingStep4").addClass("d-none");
+                        $("#bookingStep5").removeClass("d-none");
+                        $("#bookingNavigation").removeClass("d-flex");
+                        $("#bookingNavigation").addClass("d-none");
+                        Cinema.settings.navWarn = false;
+
+                    }
+                });
+
             }
-            
-            if($("#phone").val().length <= 8) {
-                
-                $("#phone").addClass("is-invalid");
-                con = false;
-                
-            }
-            
-            if($("#email").val().length <= 1) {
-                
-                $("#email").addClass("is-invalid");
-                con = false;
-                
-            }
-            
-            if($("#reEmail").val().length < 1 || $("#reEmail").val() !== $("#email").val()) {
-                
-                $("#reEmail").addClass("is-invalid");
-                con = false;
-                
-            }
-            
-            if(con === false) {
-                
-                alert("errors in form");
-                return;
-                
-            }
-            
-        }); */
+        });
+
+    },
+    openTrailer: function(url) {
         
+        var code = '<div class="embed-responsive embed-responsive-16by9">';
+            code += '<iframe src="' + url + '?autoplay=1" frameborder="0" allow="autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        code += '</div>';
+        
+        showModal("Trailer", code, {"size":"lg", "vcenter":true});
         
         
     }

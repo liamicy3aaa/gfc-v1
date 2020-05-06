@@ -8,12 +8,12 @@
             <p class="mb-4">Below you will find all screens for your cinema.</p>
 
             <div class="card shadow mb-4">
-                <div class="card-header py-4">
+                <div class="card-header py-4" style="line-height:2;">
                     <h6 class="d-inline m-0 font-weight-bold text-primary">Screens</h6>
-                    <a href="/Manage/screens/new" class="d-inline float-right btn btn-success btn-icon-split btn-sm">
+                    <button onclick="Cinema.newScreen();" class="d-inline float-right btn btn-success btn-icon-split btn-sm">
                         <span class="icon text-white-50"><i class="fas fa-plus"></i></span>
                         <span class="text">New screen</span>
-                    </a>
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -25,12 +25,7 @@
                                 <th>Settings</Th>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>Screen 1</td>
-                                    <td>3</td>
-                                    <td><button class="btn-primary">view</button></td>
-                                </tr>
+                                <?php print $data["screens"];?>
                             </tbody>
                         </table>
                     </div>

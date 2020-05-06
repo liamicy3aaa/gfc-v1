@@ -1,0 +1,26 @@
+ <head>
+    <link href="/assets/Manage/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+</head>
+ {VIEW}
+ <table class="table table-bordered dataTable" width="100%" id="dataTable" data-order='[[ 0, "asc" ]]'>
+    <thead>
+        <th>Date / Time</th>
+        <th>Screen</th>
+        <th>Options</th>
+    </thead>
+    <tbody>
+        {showtimes}
+    </tbody>
+ </table>
+ <script src="/assets/Manage/vendor/datatables/jquery.dataTables.min.js"></script>
+<script src="/assets/Manage/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+<script>
+    // Call the dataTables jQuery plugin
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "language": {
+                "emptyTable": "No upcoming shows"
+            }
+        });
+    });
+</script>

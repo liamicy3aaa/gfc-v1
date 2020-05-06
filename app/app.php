@@ -3,7 +3,8 @@ ob_end_clean();
 session_name("GFC-AUTH");
 session_start();
 date_default_timezone_set("Europe/London");
-
+error_reporting(-1);
+ini_set('display_errors', 0);
 require '../vendor/autoload.php';
 
 // Registering autoloader //
@@ -38,6 +39,14 @@ $container["db"] = function() {
     $conn = parse_ini_file("../app/db.ini");
 
     return new db($conn["host"], $conn["username"], $conn["password"], $conn["database"]);
+
+};
+
+$container["payments"] = function($container) {
+
+    $keys = parse_ini_file("../app/stripe.ini");
+
+    return new payments($keys["PUBLIC_KEY"], $keys["PRIVATE_KEY"], $container["db"]);
 
 };
 

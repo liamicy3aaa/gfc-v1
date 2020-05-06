@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name = "format-detection" content = "telephone=no">
+    <link href="https://fonts.googleapis.com/css?family=Oswald:400,500" rel="stylesheet">
+    <title>%CINEMA% Booking Cancellation Email</title>
+    <style>
+        body {
+            font-family: sans-serif, Helvetica, Arial;
+            font-size: 12px;
+            margin-bottom: 1em;
+        }
+        .failbook h1 {
+            font-size: 34px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            background: red;
+            color: white;
+            width: 100%;
+
+        }
+        .cinheading {
+            font-size: 30px;
+            font-color: #73797f;
+            margin-top: 2em;
+        }
+        .email_copy {
+            background: #212121;
+            color: white;
+            padding: 10px 0px;
+            width: 100%;
+            margin: 0px auto;
+            text-align: center;
+        }
+        .body_wrap {
+            max-width: 900px;
+            border: 1px #3ab54a solid;
+            padding: 0px;
+            margin: 0px auto;
+
+            color: #34383c;
+            margin-bottom: 1em;
+        }
+        .content_wrap {
+            padding-left: 8%;
+            padding-right: 8%;
+            margin: 0px auto;
+        }
+        .logo {
+            margin: 0px auto;
+            display: block;
+            padding-top: 50px;
+        }
+        .timestamp {
+            color: #73797f;
+            font-weight: normal;
+        }
+        .book_message {
+            padding-top: 20px;
+        }
+        .collection_code {
+            width: 400px;
+            margin: 10px 0px 50px;
+            background-color: #3ab54a;
+            color: white;
+            text-align: center;
+            padding: 10px 5px;
+            font-size: 44px;
+            letter-spacing: 4px;
+            white-space: nowrap;
+            font-family: 'Oswald', sans-serif;
+        }
+        .order_heading {
+            margin: 50px auto 10px;
+            font-size: 20px;
+        }
+        td, th {
+            border: 1px solid #d2d2d2;
+            padding: 5px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 90%;
+            font-size: 12px;
+            margin-bottom: 50px;
+        }
+        .table_header td {
+            background-color: #3ab54a;
+            border: 1px solid #158d25;
+            color: white;
+        }
+        .paperless {
+            margin-bottom: 20px;
+        }
+        .paperless td {
+            font-size: 16px;
+            font-weight: 800;
+            padding-left: 20px;
+        }
+        .paperless td p {
+            font-size: 12px;
+            font-weight: 400;
+        }
+        .footer {
+            font-size: 11px;
+        }
+
+        @media print {
+            * {
+                background-color: transparent!important;
+                color: black !important;
+            }
+            .noprint {
+                display: none;
+            }
+        }
+        .appleLinksWhite a {
+            color: #ffffff !important;
+            text-decoration: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="body_wrap">
+    <div class="content_wrap">
+
+
+        <p class="cinheading">%CINEMA%&nbsp;</p><strong>Booking Cancelled: <span class="timestamp">%TIME%</span></strong><br />
+
+        <div class="book_message">
+
+            <p style="font-size:22px"><strong>Dear %BOOKING_NAME%</strong>,<br /><br /></p>
+            <p>
+
+
+
+
+                Your booking has been cancelled. %REFUND_INFO%</p>
+
+
+            <h1 class="order_heading">Booking Details</h1>
+
+
+
+            <p>Film: %FILM%<br/>
+                Screen: %SCREEN%<br/>
+                Seats: %SEATS%<br/>
+                Time: %SHOWTIME%<br/>
+                Card: <i class="fab fa-cc-%CARD_TYPE% fa-2x"></i> **** %CARD_LAST4%<br/>
+                Cost: %COST%</p>
+            <!-- <table>
+
+                <tr data-transactionid="9299">
+                    <td style="background-color: #3ab54a; color:white; font-size: 13px;">Date</td>
+                    <td style="background-color: #3ab54a; color:white; font-size: 13px;">Time</td>
+                    <td style="background-color: #3ab54a; color:white; font-size: 13px;">Ticket Type</td>
+                    <td style="text-align: right; background-color: #3ab54a; color:white; font-size: 13px;">Units</td>
+                    <td align="right" style="background-color: #3ab54a; color:white; font-size: 13px;">Price</td>
+                    <td align="right" style="background-color: #3ab54a; color:white; font-size: 13px;">Gross</td>
+                    <td style="background-color: #3ab54a; color:white; font-size: 13px;">Film</td>
+                    <td style="background-color: #3ab54a; color:white; font-size: 13px;">Seat Type</td>
+                    <td style="background-color: #3ab54a; color:white; font-size: 13px;">Seat Number</td>
+                </tr>
+
+
+                <tr data-tag="ticket">
+
+                    <td>Thu 21 Nov 2019</td>
+                    <td>7:30 p.m.</td>
+
+                    <td data-tag="tickettype">Adult</td>
+                    <td data-tag="ticketqty" align="right">1</td>
+                    <td data-tag="ticketprice" align="right">&pound;8.00</td>
+                    <td align="right">&pound;8.00</td>
+                    <td data-tag="film">Official Secrets</td>
+
+                    <td data-tag="seat">Standard</td>
+                    <td>G4 </td>
+
+                </tr>
+
+                <tr data-tag="ticket">
+
+                    <td>Thu 21 Nov 2019</td>
+                    <td>7:30 p.m.</td>
+
+                    <td data-tag="tickettype">Student</td>
+                    <td data-tag="ticketqty" align="right">1</td>
+                    <td data-tag="ticketprice" align="right">&pound;7.00</td>
+                    <td align="right">&pound;7.00</td>
+                    <td data-tag="film">Official Secrets</td>
+
+                    <td data-tag="seat">Standard</td>
+                    <td>G5 </td>
+
+                </tr>
+
+
+
+
+
+
+
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td style="font-size:13px"><strong>Grand Total</strong></td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td data-tag="grandtotal" align="right" style="font-size:13px"><strong>&pound;15.00</strong></td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+
+            </table>-->
+
+
+
+
+
+            <p class="noprint">If this is incorrect, please see any member of staff at the cinema, who will be happy to help you.</p>
+
+            <p class="noprint">In the event of an error or if you have a question regarding your booking, then please speak to a member of staff at the cinema.</p>
+
+
+
+            <p><strong>Thank you for booking with %CINEMA%</strong></p>
+
+
+
+            <br /><br /><hr class="noprint" />
+
+            <p class="footer noprint">Booking facilities are provided by Gadgetfreak Systems.</p>
+            <p class="footer noprint">This email has been sent by Gadgetfreak Systems on behalf of %CINEMA%. Gadgetfreak Systems and %CINEMA% are committed to the highest levels of customer service. Your views and experiences are important to us to ensure we continue to offer the best standards possible. Please mail us at <a href="mailto:gfc@gadgetfreak.co.uk">gfc@gadgetfreak.co.uk</a> with your comments. In the unlikely event that you have experienced problems placing your booking, or the sales details above are incorrect, please contact the cinema directly.</a></p>
+
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

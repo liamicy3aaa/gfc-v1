@@ -31,7 +31,8 @@ $app->group("/film", function(){
             "desc" => $filmInfo["film_desc"],
             "rating" => $filmInfo["film_rating"],
             "release" => date("d-m-Y", $filmInfo["film_release"]),
-            "runtime" => $filmInfo["film_runtime"]
+            "runtime" => $filmInfo["film_runtime"],
+            "trailer" => $filmInfo["film_trailer"]
             ]);
 
     });

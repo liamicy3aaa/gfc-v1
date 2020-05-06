@@ -68,7 +68,7 @@ class db {
 
         } else {
 
-            die('Unable to prepare statement (check your syntax) - ' . $this->connection->error);
+            die('Unable to prepare statement (check your syntax) - ' . $query . ' ' . $this->connection->error);
 
         }
 

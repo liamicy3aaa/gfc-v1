@@ -1,0 +1,28 @@
+<ul class="list-unstyled">
+  <li class="media mb-4">
+    <img src="/assets/images/films/%DID%_thumb.jpg" class="img-thumbnail mr-3 d-none d-md-block" style="height:150px !important; width:auto;">
+    <div class="media-body">
+      <button class='btn btn-info mt-4 mb-2' onclick='Cinema.alterThumbBanner("%ID%", "thumbnail")'>Alter thumbnail</button><br/>
+      <small>This image is used for the thumbnail of the movie for the overview and film details page.<br/>Recommended Size: 341px by 512px</small>
+    </div>
+  </li>
+  <li class="media">
+    <img src="/assets/images/films/%DID%_banner.jpg" class="img-thumbnail mr-3 d-none d-md-block" style="height:150px !important; width:auto; min-width:150px !important;">
+    <div class="media-body">
+      <button class='btn btn-info mt-4 mb-2' onclick='Cinema.alterThumbBanner("%ID%", "banner")'>Alter Banner</button><br/>
+      <small>This image is used for the large background image on the films details and film booking screens.<br/>Recommended Size: 1024px by 576px</small>
+    </div>
+  </li>
+  </ul>
+  <!--
+<div class="row">
+    <div class="col-12 col-md-4">
+        <img class="img-fluid img-thumbnail" src="/assets/images/films/%DID%_thumb.jpg" style="height:150px !important; width:auto;"/>
+        <br/><button class='btn btn-info my-1' onclick='Cinema.alterThumbBanner("%ID%", "thumbnail")'>Alter thumbnail</button>
+    </div>
+    <div class="col-12 col-md-4">
+        <img class="img-fluid img-thumbnail" src="/assets/images/films/%DID%_banner.jpg" style="height:150px !important; width:auto;"/>
+        <button class='btn btn-info my-1' onclick='Cinema.alterThumbBanner("%ID%", "banner")'>Alter banner</button>
+    </div>
+    <div class="col-hidden col-md-4"></div>
+</div>-->

@@ -4,13 +4,14 @@
 * Cinema Class
 * This is the main class for the cinema system
 * Author: Liam McClelland
-* Copyright: © 2019 Gadgetfreak Systems.
+* Copyright: ï¿½ 2019 Gadgetfreak Systems.
 */
 
 class cinema {
     
     protected $config;
     protected $conn;
+    protected $seatingSizes = array("1" => "standard", "2" => "double", "50" => "standard", "99" => "space");
     
     /**
     * Constructor
@@ -42,10 +43,11 @@ class cinema {
             $fields = array(
                 "%BANNER%",
                 "%NAME%",
-                "%DESC%"
+                "%DESC%",
+                "%TRAILER%"
             );
 
-            $data = array($data["banner"], $data["title"], $data["desc"]);
+            $data = array($data["banner"], $data["title"], $data["desc"], $data["trailer"]);
 
             return str_replace($fields, $data, file_get_contents("../templates/partials/whats-on-banner.phtml"));
 
@@ -70,6 +72,40 @@ class cinema {
 
         return $data;
 
+    }
+    
+    public function createScreen($screenName, $status) {
+        
+        $query = $this->conn->query("INSERT INTO gfc_screens (screen_name,status) VALUES (?, ?)", $screenName, $status);
+        
+        return true;
+        
+    }
+    
+    public function deleteScreen($screenId) {
+        
+        
+        $seatCount = $this->getSeatingInfoByScreen($screenId, false);
+        
+        
+        if($seatCount >= 1) {
+            
+            $this->conn->query("DELETE FROM gfc_screens_seats WHERE screen_id = ?",  $screenId);    
+            
+        }
+        
+        $delete = $this->conn->query("DELETE FROM gfc_screens WHERE id = ?",  $screenId);
+            
+        if($delete->affectedRows() >= 1) {
+            
+            return true;
+            
+        } else {
+            
+            return false;
+            
+        }
+        
     }
     
     /**
@@ -97,6 +133,306 @@ class cinema {
         return $film;
         
     }
+    
+    public function screenExists($id) {
+        
+        $r = $this->conn->query("SELECT id FROM gfc_screens WHERE id = ?", $id)->numRows();
+        
+        return (($r < 1) ? false : true);
+    }
+
+    public function getScreenLastRow($id) {
+
+        $result = $this->conn->query("SELECT MAX(seat_row) as 'row', MAX(seat_row_label) as 'row_label' FROM gfc_screens_seats WHERE screen_id = ?", $id)->fetchArray();
+
+        $row = (($result["row"] === null) ? 0 : $result["row"]);
+        $label = (($result["row_label"] === null) ? null : $result["row_label"]);
+
+        return array("status" => true, "row" => $row, "row_label" => $label);
+
+    }
+
+    public function addScreenRows($params = array()) {
+
+        $required = array("screenId", "rows", "seats", "seatLabel");
+
+        foreach($required as $item) {
+
+            if(!isset($params[$item])) {
+
+                return array("status" => false, "error" => "Missing $item");
+
+            }
+
+        }
+
+        // Get highest row number for the screen from the database
+        $result = $this->getScreenLastRow($params["screenId"]);
+        $startRow = ($result["row"] + 1);
+        $startRowLabel = (($result["row_label"] === null) ? "A" : (++$result["row_label"]));
+        $totalResults = ($params["rows"] * $params["seats"]);
+        $count = 1;
+
+        $SQL = "INSERT INTO gfc_screens_seats (screen_id, seat_row, seat_row_label, seat_number, seat_status, seat_type) VALUES ";
+
+        for($increment = 1; $increment <= $params["rows"]; $increment++) {
+
+            for($inc = 1; $inc <= $params["seats"]; $inc++) {
+
+                $SQL .= "(";
+
+                $SQL .= "$params[screenId],";
+                $SQL .= "$startRow,";
+                $SQL .= "'$startRowLabel',";
+                $SQL .= "$inc,";
+                $SQL .= "1,";
+                $SQL .= "1";
+
+                $SQL .= ")";
+
+                if($count < $totalResults) {
+
+                    $SQL .= ", ";
+
+                }
+
+                $count++;
+            }
+
+            $startRow++;
+            $startRowLabel++;
+
+        }
+
+        //return array("status" => false, "error" => "params", "data" => $SQL);
+        $this->conn->query($SQL);
+
+        return array("status" => true);
+
+    }
+    
+    public function reorderScreenRows($id, $rowOrder, $options = array()) {
+        
+        // Step 1 - Get the list of seats for the screens
+        $seats = $this->getSeatingInfoByScreen($id, true);
+        
+        // Step 2 - Sort them by their row ID
+        $screen = array();
+        
+        foreach($seats AS $pos => $seat) {
+            
+            if(!isset($screen[$seat["seat_row"]])) {
+                
+                $screen[$seat["seat_row"]] = array();
+                
+            }
+            
+            $screen[$seat["seat_row"]][] = $seat["id"];
+            
+        }
+
+           //$sql = array();
+        // Step 3 - Loop through each item in the order and update the seats row id
+        foreach($rowOrder as $position => $row) {
+            
+            $newRow = ($position + 1);
+            $seatIds = implode(",", $screen[$row]);
+            
+            $this->conn->query("UPDATE gfc_screens_seats SET seat_row = $newRow WHERE id IN($seatIds) AND screen_id = $id");
+            //$sql[] = "UPDATE gfc_screens_seats SET seat_row = $newRow WHERE id IN($seatIds) AND screen_id = $id";
+        }
+        
+        return true;
+        
+    }
+    
+    public function addFilm($data) {
+        
+        $required = array("film_name", "film_desc", "film_release", "film_release", "film_runtime");
+        
+        // Step 1 - Check we have all the required pieces of data
+        foreach($required as $item) {
+            
+            if(!isset($data[$item])) {
+                
+                return array("status" => false, "error" => "missing_info", "error_desc" => "$item missing from data");
+                
+            }
+        }
+        
+        // STEP 2 - Check a film with the same name doesn't already exist
+        $count = $this->conn->query("SELECT id FROM gfc_films WHERE film_name = ?", $data["film_name"])->NumRows();
+        
+        if($count >= 1) {
+            
+            return array("status"=>false, "error" => "film_exists", "error_desc" => "A film with the same name already exists");
+            
+        }
+        
+        // Step 3 - Add film to database
+        
+            $r = $this->conn->query("INSERT INTO gfc_films (film_name, film_desc, film_rating, film_release, film_runtime, film_status) VALUES (?, ?, ?, ?, ?, ?)", array(
+                $data["film_name"],
+                $data["film_desc"],
+                $data["film_rating"],
+                $data["film_release"],
+                $data["film_runtime"],
+                0
+            ));
+            
+        // Step 4 - Get id of the film we just created
+        
+            $id = $this->conn->query("SELECT id FROM gfc_films WHERE film_name = ?", $data["film_name"])->fetchArray()["id"];
+            
+            return array("status" => true, "filmId" => $id); 
+        
+    }
+    
+    public function updateFilmStatus($filmId, $status = false) {
+        
+        if($status === false) {
+            
+            return false;
+            
+        }
+        
+        $status = (($status) ? "1" : "0");
+        
+        $this->conn->query("UPDATE gfc_films SET film_status = ? WHERE id = ?", $status, $filmId);
+        
+        return true;
+        
+        
+    }
+
+    public function deleteFilm($filmId) {
+
+        // Check id matches a film in the database
+        $d = $this->getFilmData($filmId);
+
+        if(count($d) < 1) {
+
+            return array("status" => false, "error" => "Unable to locate film.");
+
+        }
+
+        // Check that the film doesn't have any active showings
+        if(($this->getShowtimesByFilm($filmId, false)) >= 1) {
+
+            return array("status" => false, "error" => "Cannot delete a film with an active showing");
+
+        }
+
+        // Remove film from database
+        $r = $this->conn->query("DELETE FROM gfc_films WHERE id = ?", $filmId);
+
+        if($r->affectedRows() < 1) {
+
+            return array("status" => false, "error" => "Unable to delete film");
+
+        } else {
+
+            // Remove film thumbnail and banner from server
+            $f1 = substr($d["film_thumbnail"], 1, strlen($d["film_thumbnail"]));
+            $f2 = substr($d["film_banner"], 1, strlen($d["film_banner"]));
+
+            if(file_exists($f1)) {
+
+                unlink($f1);
+
+            }
+
+            if(file_exists($f2)) {
+
+                unlink($f2);
+
+            }
+
+            return array("status" => true);
+
+        }
+
+    }
+
+    public function addShowing($data) {
+
+        $required = array(
+            "date",
+            "time",
+            "film_id",
+            "screen_id",
+            "special_requirements",
+            "ticket_config"
+        );
+
+        // Checking we have all required pieces of data
+        foreach($required as $item) {
+
+            if(!isset($data[$item])) {
+
+                return array("status" => false, "error" => "missing_data", "error_desc" => "$item is missing from data.");
+
+            }
+
+        }
+
+        // Checking data
+
+        // #1 - date should just be numbers with dashes
+        $check = str_replace("-", "", $data["date"]);
+
+        if(!ctype_digit($check)) {
+
+            return array("status"=>false, "error" => "invalid_date", "error_desc" => "Invalid date provided");
+
+        }
+
+        // #2 - time should just be numbers without colon
+        $check = str_replace(":", "", $data["time"]);
+
+        if(!ctype_digit($check)) {
+
+            return array("status"=>false, "error" => "invalid_time", "error_desc" => "Invalid time provided");
+
+        }
+
+        // #3 - screen id should just be a number
+        if(!ctype_digit($data["screen_id"])) {
+
+            return array("status"=>false, "error" => "invalid_screen_id", "error_desc" => "Invalid screen_id provided");
+
+        }
+
+        // #4 - Film id should just be a number
+        if(!ctype_digit($data["film_id"])) {
+
+            return array("status"=>false, "error" => "invalid_film_id", "error_desc" => "Invalid film_id provided");
+
+        }
+
+        // #5 - Special requirements should just be alphanumeric characters
+        $check = str_replace(" ", "", $data["special_requirements"]);
+        if(strlen($check) >= 1 && !ctype_alnum($check)) {
+
+            return array("status"=>false, "error" => "invalid_requirements", "error_desc" => "Invalid requirements provided");
+
+        }
+
+        // Build query
+        $columns = implode(",", $required);
+        $info = "'" . $data["date"] . "',";
+        $info .= "" . $data["time"] . ",";
+        $info .= "" . $data["film_id"] . ",";
+        $info .= "" . $data["screen_id"] . ",";
+        $info .= "'" . $data["special_requirements"] . "',";
+        $info .= "'" . $data["ticket_config"] . "'";
+
+        $r = $this->conn->query("INSERT INTO gfc_films_showtimes ($columns) VALUES ($info)");
+
+        return array("status" => true);
+
+    }
+
     
     /**
     * Get film data
@@ -126,20 +462,28 @@ class cinema {
     * @param mixed $ids
     */
     
-    public function getFilms($ids = array()) {
+    public function getFilms($ids = array(), $onlyActive = true) {
         
         if(count($ids) >= 1) {
             
             $filmIds = implode(",", $ids);
             
-            $films = $this->conn->query("SELECT * FROM gfc_films WHERE id IN($filmIds) AND film_status = 1")->fetchAll();
+            $films = $this->conn->query("SELECT * FROM gfc_films WHERE id IN($filmIds)" . (($onlyActive === true) ? "AND film_status = 1" : ""))->fetchAll();
             
         } else {
         
-            $films = $this->conn->query("SELECT * FROM gfc_films WHERE film_status = 1")->fetchAll();
+            $films = $this->conn->query("SELECT * FROM gfc_films ". (($onlyActive === true) ? "WHERE film_status = 1" : ""))->fetchAll();
         
         }
         
+        return $films;
+        
+    }
+    
+    public function getAllFilms() {
+        
+            $films = $this->conn->query("SELECT * FROM gfc_films")->fetchAll();
+
         return $films;
         
     }
@@ -171,7 +515,47 @@ class cinema {
         return $types;
         
     }
-    
+
+
+    public function getTicketInfoByBooking($id) {
+
+        $booking = $this->getBookingInfo($id);
+
+        // Loop through seat info and get the name for each ticket type needed
+        $ticketTypes = json_decode($booking["booking_info"], true);
+
+        $requiredTypes = array();
+
+        foreach($ticketTypes as $type => $number) {
+
+            if(intval($number) >= 1 && !in_array($type, $requiredTypes)) {
+
+                $requiredTypes[] = $type;
+
+            }
+
+        }
+
+        // Get ticket names
+        $required = implode(",", $requiredTypes);
+
+        $ticketInfo = $this->conn->query("SELECT id, ticket_label, ticket_cost FROM gfc_ticket_types WHERE id IN($required)")->fetchAll();
+
+        $details = array();
+
+        foreach($ticketInfo as $ticket) {
+
+            $details[$ticket["id"]]["label"] = $ticket["ticket_label"];
+            $details[$ticket["id"]]["cost"] = $ticket["ticket_cost"];
+            $details[$ticket["id"]]["count"] = intval($ticketTypes[$ticket["id"]]);
+
+        }
+
+        return $details;
+
+    }
+
+
     /**
     * Get show information
     * Get information about a particular show
@@ -188,10 +572,16 @@ class cinema {
         $show = $this->conn->query("SELECT *, b.id AS 'showId', b.screen_id, b.time AS 'showtime', c.screen_name, b.`ticket_config` FROM gfc_films AS a INNER JOIN gfc_films_showtimes AS b ON a.id = b.film_id INNER JOIN gfc_screens AS c ON b.screen_id = c.id WHERE b.id = ?", $showId)->fetchArray();
         
         if(count($show) >= 1) {
-        $show["ticket_config"] = json_decode($show["ticket_config"], true);
-        }
+            $show["ticket_config"] = json_decode($show["ticket_config"], true);
 
-        return $show;
+
+            return $show;
+
+        } else {
+
+            return false;
+
+        }
              
     }
     
@@ -305,6 +695,12 @@ class cinema {
         
     }
     
+    public function getBookings() {
+        
+        return $this->conn->query("SELECT a.*, b.film_name FROM gfc_bookings AS a INNER JOIN gfc_films AS b ON a.film_id = b.id")->fetchAll();
+        
+    }
+    
     /**
     * Get booking information
     * Get information about a particular booking
@@ -397,7 +793,7 @@ class cinema {
         
         $update = $this->conn->query($sql, $bookingId)->affectedRows();
         
-        if($update > 0) {
+        /*if($update > 0) {
             
             return true;
                 
@@ -405,16 +801,221 @@ class cinema {
             
             return false;
             
-        }
+        }*/
+
+        return true;
               
     }
     
-    public function cancelBooking($bookingId) {
+    public function cancelBooking($bookingId, $refund = "full") {
         
+        $this->conn->query("UPDATE gfc_bookings SET booking_status = 'cancelled' WHERE booking_reference = ?", $bookingId);
+
+        $booking_id = $this->getBookingInfo($bookingId);
+        $filmInfo = $this->getFilms(array($booking_id["film_id"]));
+        $cinemaInfo = $this->getCinemaInfo();
+        $showInfo = $this->getShowInfo($booking_id["showtime_id"]);
+        $transactionInfo = $this->conn->query("SELECT * FROM gfc_transactions WHERE booking_id = ?", $booking_id["id"])->fetchArray();
+
+        // send confirmation email
+        $email = new email($this);
+
+        $email->setTemplate("booking_cancellation");
+
+        $email->addRecipient($booking_id["booking_email"], $booking_id["booking_name"]);
+
+        $email->setSubject("Booking cancelled: $bookingId");
+
+        // Getting seat Ids
+        $seats = $this->getSeatingInfo(json_decode($booking_id["booking_seats"], true));
+
+        $seatLabels = array();
+
+        foreach($seats as $seat) {
+
+            $seatLabels[] = $seat["seat_row_label"] . $seat["seat_number"];
+
+        }
+
+        // Generating refund message
+        setlocale(LC_MONETARY,"en");
+
+        switch($refund) {
+
+            case "full":
+                $refundMessage = "A full refund of <b>&pound;" . money_format("%i", $booking_id["booking_total"]) . "</b> has been given and you should receive this amount within the next 5 days.";
+                break;
+
+            case "partial":
+                $refundMessage = "A partial refund of <b>&pound;" . money_format("%i", $transactionInfo["refund_amount"]) . "</b> has been given and you should receive this amount within the next 5 days.";
+                break;
+
+            case "none":
+                $refundMessage = "No refund has been given for this cancellation. If you feel this is incorrect, then please contact " . $cinemaInfo["name"] .".";
+                break;
+
+        }
+
+        // Splitting card info
+        $card = explode(":", $transactionInfo["payment_type"]);
+
+
+        $email->addContent(array(
+            "%CINEMA%" => $cinemaInfo["name"],
+            "%TIME%" => date("l jS F H:i:s", time()),
+            "%SHOWTIME%" => date("l jS F H:i", $showInfo["time"]),
+            "%BOOKINGREF%" => $bookingId,
+            "%BOOKING_NAME%" => $booking_id["booking_name"],
+            "%FILM%" => $filmInfo[0]["film_name"],
+            "%SCREEN%" => $showInfo["screen_name"],
+            "%SEATS%" => implode(",", $seatLabels),
+            "%REFUND_INFO%" => $refundMessage,
+            "%CARD_TYPE%" => $card[0],
+            "%CARD_LAST4%" => $card[1],
+            "%COST%" => money_format("%i", $booking_id["booking_total"])
+        ));
+
+        $email->send();
+
+
+        
+        //$this->conn->query("DELETE FROM gfc_bookings WHERE booking_reference = ?", $bookingId);
+        
+        return true;  
+        
+    }
+    
+    public function deleteBooking($bookingId) {
+              
         $this->conn->query("DELETE FROM gfc_bookings WHERE booking_reference = ?", $bookingId);
         
         return true;  
         
+    }
+
+    public function sendBookingConfirmation($id, $contact = false) {
+
+        $booking_id = $this->getBookingInfo($id);
+        $filmInfo = $this->getFilms(array($booking_id["film_id"]));
+        $cinemaInfo = $this->getCinemaInfo();
+        $showInfo = $this->getShowInfo($booking_id["showtime_id"]);
+        $transaction = $this->conn->query("SELECT * FROM gfc_transactions WHERE booking_id = ? LIMIT 1", $booking_id["id"])->fetchArray();
+
+        // send confirmation email
+        $email = new email($this);
+
+        $email->setTemplate("booking_confirmation");
+
+        if($contact !== false) {
+
+            $email->addRecipient($contact);
+
+        } else {
+
+            $email->addRecipient($booking_id["booking_email"], $booking_id["booking_name"]);
+
+        }
+
+        $email->setSubject("Booking confirmed: $id");
+
+        // Getting seat Ids
+        $seats = $this->getSeatingInfo(json_decode($booking_id["booking_seats"], true));
+
+        $seatLabels = array();
+
+        foreach($seats as $seat) {
+
+            $seatLabels[] = $seat["seat_row_label"] . $seat["seat_number"];
+
+        }
+
+        // Splitting card info
+        $card = explode(":", $transaction["payment_type"]);
+
+        setlocale(LC_MONETARY,"en");
+        $email->addContent(array(
+            "%CINEMA%" => $cinemaInfo["name"],
+            "%TIME%" => date("l jS F H:i:s", $booking_id["booking_ts"]),
+            "%SHOWTIME%" => date("l jS F H:i", $showInfo["time"]),
+            "%BOOKINGREF%" => $id,
+            "%BOOKING_NAME%" => $booking_id["booking_name"],
+            "%FILM%" => $filmInfo[0]["film_name"],
+            "%SCREEN%" => $showInfo["screen_name"],
+            "%SEATS%" => implode(",", $seatLabels),
+            "%CARD_TYPE%" => $card[0],
+            "%CARD_LAST4%" => $card[1],
+            "%COST%" => money_format("%i", $booking_id["booking_total"])
+        ));
+
+        /*
+        $html = "Hello " . $booking_id["booking_name"] . ",<br/>";
+        $html .= "Thanks for booking to see " . $filmInfo[0]["film_name"] . ".<br/><br/>";
+        $html .= "Your booking reference is <span style='font-weight:bold'>" . $id . "</span> which you can use to collect your tickets when you arrive at the venue.";
+        $html .= "<br/><br/>Kind regards, GFC Cinemas";
+
+
+        $email->addContent(array(
+            "%CONTENT%" => $html
+        ));*/
+
+        $email->send();
+
+        return true;
+
+    }
+
+    public function getShowtimesByDate($date) {
+
+        $r = $this->conn->query("SELECT a.*, b.screen_name as 'screen_name', c.film_name as 'film_name', c.film_runtime as 'runtime' FROM gfc_films_showtimes as a INNER JOIN gfc_screens as b ON a.screen_id = b.id INNER JOIN gfc_films as c ON a.film_id = c.id WHERE date = ?", $date)->fetchAll();
+
+        return $r;
+
+    }
+    
+    public function getShowtimesByScreen($screenId, $includeData = true) {
+        
+        $time = time();
+        
+        $columns = (($includeData) ? "*" : "count(id) as 'total'");
+        
+        $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE screen_id = ? AND time >= ? ORDER BY time ASC", $screenId, $time);    
+        
+        if($includeData) {
+            
+            return $query->fetchAll();
+            
+        } else {
+            
+            return $query->fetchArray()["total"];
+            
+        }
+    }
+    
+    public function getShowtimesByFilm($filmId, $includeData = true, $status = "upcoming") {
+        
+        $time = time();
+        
+        $columns = (($includeData) ? "*" : "count(id) as 'total'");
+
+        if($status == "all") {
+
+            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? ORDER BY time ASC", $filmId);
+
+        } else {
+
+            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? AND time >= ? ORDER BY time ASC", $filmId, $time);
+
+        }
+
+        if($includeData) {
+            
+            return $query->fetchAll();
+            
+        } else {
+            
+            return $query->fetchArray()["total"];
+            
+        }
     }
     
     public function getShowtimes($id = false) {
@@ -424,7 +1025,7 @@ class cinema {
         if($id !== false) {
             
             // List show times for a specific film
-            $times = $this->conn->query("SELECT * FROM gfc_films_showtimes WHERE film_id = ? AND `time` > ?", $id, $time)->fetchAll();
+            $times = $this->conn->query("SELECT * FROM gfc_films_showtimes WHERE film_id = ? AND `time` > ? ORDER BY time ASC", $id, $time)->fetchAll();
             
             return $times;
             
@@ -432,7 +1033,7 @@ class cinema {
             
             // List all available showtimes by film id
             
-            $times = $this->conn->query("SELECT id, film_id, date, time FROM gfc_films_showtimes WHERE `time` > ?", $time)->fetchAll();
+            $times = $this->conn->query("SELECT id, film_id, date, time FROM gfc_films_showtimes WHERE `time` > ? ORDER BY time ASC", $time)->fetchAll();
             
             $data = array();
             $filmIds = array();
@@ -513,7 +1114,7 @@ class cinema {
                 $film["film_thumbnail"],
                 cipher::encrypt($film["id"]),
                 $film["film_name"],
-                $film["film_desc"],
+                ((strlen($film["film_desc"]) > 250) ? substr($film["film_desc"], 0, 250). "..." : $film["film_desc"]),
                 $this->buildShowtimes($film, 1),
                 $film["film_runtime"],
                 $film["film_rating"]
@@ -621,7 +1222,7 @@ class cinema {
             
         } else {
             $addonPre = "";
-            $addon = "";
+            $addon = "ticket_status IN(1,0)";
             
         }
         
@@ -641,6 +1242,65 @@ class cinema {
         
     }
     
+    public function getBookingTicketInfo($bookingId) {
+        
+        $booking = $this->getBookingInfo($bookingId);
+        $bookingSeats = json_decode($booking["booking_seats"], true);
+        $seatLabels = $this->getSeatingInfo($bookingSeats);
+        $data = array();
+        $ticket = json_decode($booking["booking_info"], true);
+        $ticketTypes = array();
+        
+        // Get id for each type of ticket if at least one ticket is booked for this ticket type.
+        foreach($ticket as $id => $total) {
+            
+            if($total >= 1) {
+                
+                $ticketTypes[] = $id;
+                
+            }
+                        
+        }
+        
+        // Get ticket info for 
+        $ticketInfo = $this->getTicketInfo($ticketTypes, false);
+        $i = 0;
+        
+        foreach($ticketInfo as $id => $type) {
+
+            $config = json_decode($type["ticket_config"], true);
+            
+            // Get seats
+            $end = ($i + ($config["seats"] * $ticket[$id]));
+            $seats = array();
+            $seatNumbers = "";
+            
+            while($i < $end) {
+                
+                $seats[] = $bookingSeats[$i];
+                $seatNumbers .= $seatLabels[$i]["seat_row_label"] . $seatLabels[$i]["seat_number"] . ",";
+                $i++;
+            }
+            
+            $data[] = array(
+              "id" => $id,
+              "item" => $type["ticket_label"],
+              "units" => $ticket[$id],
+              "price" => $type["ticket_cost"] . ".00",
+              "total" => ($type["ticket_cost"] * $ticket[$id]) . ".00",
+              "seat_total" => ($config["seats"] * $ticket[$id]),
+              "seats" => $seats,
+              "seat_labels" => $seatNumbers
+            );
+            
+        }
+        
+        return $data;      
+        
+        
+        
+    } 
+    
     public function getSeatingInfo($seats) {
         
         $seating = implode(",", $seats);
@@ -648,6 +1308,24 @@ class cinema {
         $data = $this->conn->query("SELECT * FROM gfc_screens_seats WHERE id IN($seating)")->fetchAll();
         
         return $data;
+        
+    }
+    
+    public function getSeatingInfoByScreen($screenId, $includeData = true) {
+        
+        $columns = (($includeData) ? "*": "count(id) as 'total'");
+        
+        $seats = $this->conn->query("SELECT $columns FROM gfc_screens_seats WHERE screen_id = ?", $screenId);
+
+        if($includeData) {
+            
+            return $seats->fetchAll();
+            
+        } else {
+            
+            return $seats->fetchArray()["total"];
+                        
+        }
         
     }
     
@@ -691,7 +1369,7 @@ class cinema {
                 
                 $html .= "<td class='col-3 col-sm-1 col-md-2 text-right'>";
                 
-                    $html .= "<select name='" . $ticket["id"] . "' class='form-control input-sm ticket-option' style='width:65px;' data-tickettype='" . $ticket["ticket_label"] . "'>";
+                    $html .= "<select name='" . $ticket["id"] . "' class='form-control input-sm ticket-option' style='width:65px;' data-tickettype='" . cipher::encrypt($ticket["id"]) . "'>";
                     
                         // Build list ticket quantity options
                         for($x = 0; $x <= 8; $x++) {
@@ -705,7 +1383,7 @@ class cinema {
                 $html .= "</td>";
                 
                 
-                $html .= "<td class='col-1 col-md-1 text-right d-none d-sm-table-cell ticket-option-" . $ticket["id"] ."'></td>";
+                $html .= "<td class='col-1 col-md-1 text-right d-none d-sm-table-cell ticket-option-" . cipher::encrypt($ticket["id"]) ."'></td>";
                 
             $html .= "</tr>";
             
@@ -876,7 +1554,15 @@ class cinema {
                                     $html .= "<td class='font-weight-bold border-0'>" . date("l jS F H:i", $showInfo["time"]) . "</td>";
                                     
                                 $html .= "</tr>";
+
+                                $html .= "<tr>";
+
+                                    $html .= "<td class='text-right border-0'>Screen:</td>";
+
+                                    $html .= "<td class='font-weight-bold border-0'>" . $showInfo["screen_name"] ."</td>";
                                 
+                                $html .= "</tr>";
+
                                 $html .= "<tr>";
                                 
                                     $html .= "<td class='text-right border-0'>Seats:</td>";
@@ -953,6 +1639,131 @@ class cinema {
         return $html;
         
     }
+    
+    public function buildScreenPlan($screen, $settings = false) {
+        
+        $allSeats = $this->conn->query("SELECT * FROM gfc_screens_seats WHERE screen_id = ? AND seat_status = 1", $screen)->fetchAll();
+        $seatingPlan = array();
+        
+        foreach($allSeats as $index => $seat) {
+
+            $allSeats[$index]["status"] = "GREEN";
+
+            if(!isset($seatingPlan[$seat["seat_row"]])) {
+
+                $seatingPlan[$seat["seat_row"]] = array();
+
+            }
+
+            $seatingPlan[$seat["seat_row"]][] = $allSeats[$index];
+
+        }
+        ksort($seatingPlan);
+        
+        $html = "";
+        $highest = 0;                
+        $seatingSizes = $this->seatingSizes;
+
+        foreach($seatingPlan as $row => $seats) {
+
+            // Start by creating the start of the row.
+            $html .= "<tr class='screen-row' data-rowid='$row'>";
+
+                // Building the seats
+                foreach($seats as $seat) {
+
+                    if(count($seats) > $highest) {
+
+                        $highest = count($seats);
+
+                    }
+
+                    // Start of seat
+                    $html .= "<td class='screen-seat seat-" . $seatingSizes["$seat[seat_type]"] . "' data-seatId='" . cipher::encrypt($seat["id"]) . "' " . (($seat[seat_type] == "99") ? "data-seatType='space'" : "data-seatType='seat'") . ">";
+
+                        // Insert seat image
+                        $html .= "<img src='/assets/images/seats/" . $seat["seat_type"] . "-seat_" . $seat["status"] . ".png'/><br/>";
+
+                        // Insert seat label
+                        if(!in_array($seat["seat_type"], array("99"))) {
+                            $html .= $seat["seat_row_label"] . $seat["seat_number"];
+                        }
+
+                    $html .= "</td>";
+
+                }
+
+
+            // Ending the row
+            $html .= "</tr>";
+
+        }
+        
+        // Adding default extra rows
+        
+            $html .= "<tr class='screen-row not-sortable' data-rowid='SCREEN'>";
+            
+                $html .= "<td colspan='" . $highest . "' style='border:1px solid lightgrey; width:100%;' class='text-center p-1'>SCREEN</td>";
+                        
+            $html .= "</tr>";
+            
+            $html .= "<tr class='screen-row d-table-row d-sm-none not-sortable'>";
+            
+                $html .= "<td colspan='0' class='text-center p-1'> <---- Scroll ----> </td>";
+                
+            $html .= "</tr>";
+            
+        return array(
+            "html" => $html,
+            "highest" => $highest
+        );
+        
+        
+        
+    }
+
+    /** Use this to retrieve a booking by seat id for a specific showing */
+    public function getBookingBySeat($show, $seatId) {
+
+        $validStatuses = implode(",", array(
+            "'reserved'",
+            "'reserved_temp'",
+            "'complete'",
+            "'awaiting_payment'",
+            "'GFC_ADMIN'",
+            "'PAID'"
+        ));
+
+        //die("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . "");
+        // STEP 1 - Get all bookings that hold tickets for this showing
+
+        $result = $this->conn->query("SELECT booking_reference, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . ")", $show)->fetchAll();
+
+        // STEP 2 - Combine all seat ids from the bookings
+        $bookedSeats = array();
+
+        foreach($result as $index => $booking) {
+
+            $seats = json_decode($booking["booking_seats"], true);
+
+            foreach($seats as $seat) {
+
+                if($seat == "$seatId") {
+                    //print "<pre>"; print_r($booking); print "</pre>";
+                    //die($booking["booking_reference"]);
+
+                    return $this->getBookingInfo($booking["booking_reference"]);
+                    break;
+
+                }
+
+            }
+
+        }
+
+        return false;
+
+    }
 
     public function buildSeatingPlan($show, $ticketsRequired) {
 
@@ -963,7 +1774,8 @@ class cinema {
             "'reserved_temp'",
             "'complete'",
             "'awaiting_payment'",
-            "'GFC_ADMIN'"
+            "'GFC_ADMIN'",
+            "'PAID'"
         ));
 
         //die("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . "");
@@ -1028,6 +1840,7 @@ class cinema {
 
 
         }
+        ksort($seatingPlan);
 
         // STEP 7 - Finding a row with enough seats for required tickets
         $preselectedTickets = array();
@@ -1125,7 +1938,7 @@ class cinema {
         $html = "";
         $highest = 0;
 
-        $seatingSizes = array("1" => "standard", "2" => "double");
+        $seatingSizes = $this->seatingSizes;
 
         foreach($seatingPlan as $row => $seats) {
 
@@ -1156,13 +1969,15 @@ class cinema {
                     $seatConfig = (($seat["status"] == "GREY") ? "seat-taken" : (($selectTicket) ? "seat-selected" : ""));
 
                     // Start of seat
-                    $html .= "<td class='screen-seat seat-" . $seatingSizes["$seat[seat_type]"] . " " . $seatConfig . "' data-seatId='" . cipher::encrypt($seat["id"]) . "'>";
+                    $html .= "<td class='screen-seat seat-" . $seatingSizes["$seat[seat_type]"] . " " . $seatConfig . "' data-seatId='" . cipher::encrypt($seat["id"]) . "' data-showId='" . cipher::encrypt($show) . "' data-seattype='" . (($seat["seat_type"] == "99") ? "space" : "seat") . "'>";
 
                         // Insert seat image
                         $html .= "<img src='/assets/images/seats/" . $seat["seat_type"] . "-seat_" . (($selectTicket) ? "RED" : $seat["status"]) . ".png'/><br/>";
 
                         // Insert seat label
-                        $html .= $seat["seat_row_label"] . $seat["seat_number"];
+                        if(!in_array($seat["seat_type"], array("99"))) {
+                            $html .= $seat["seat_row_label"] . $seat["seat_number"];
+                        }
 
                     $html .= "</td>";
 
@@ -1208,7 +2023,8 @@ class cinema {
             "'reserved_temp'",
             "'complete'",
             "'awaiting_payment'",
-            "'GFC_ADMIN'"
+            "'GFC_ADMIN'",
+            "'PAID'"
         ));
         
         // Get number of available taken seats for the show

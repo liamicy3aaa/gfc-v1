@@ -1,0 +1,50 @@
+<div class='row'>
+    <div class='col-12 col-md-11'>
+        <form action="/Manage/ajax/film/update" method="POST">
+            <div class="form-group">
+                <label for="inputFilmName">Film title</label>
+                <input type="text" name="filmName" class="form-control" id="inputFilmName" value="{filmName}" placeholder="Enter Film title">
+            </div>
+            <div class="form-group">
+                <label for="inputFilmDesc">Film Description</label>
+                <textarea name="filmDesc" class="form-control" id="inputfilmDesc" placeholder="Enter Film description..">{filmDesc}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="inputFilmRelease">Film release date</label>
+                <input name="filmRelease" id="inputFilmRelease" type="text" class="form-control" value="{filmRelease}" placeholder="Select date">
+            </div>
+            <div class="form-group">
+                <label for="inputFilmRating">Film rating</label>
+                <select name="filmRating" id="inputFilmRating" class="form-control">
+                    <option value="X" disabled selected>Select Rating...</option>
+                    <option value="U">U</option>
+                    <option value="PG">PG</option>
+                    <option value="12A">12A</option>
+                    <option value="15">15</option>
+                    <option value="18">18</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="inputFilmLength">Film runtime <small>(In minutes)</small></label>
+                <input name="filmRuntime" type="number" id="inputFilmLength" class="form-control" value="{filmRuntime}" placeholder="Enter film runtime">
+            </div>
+            <button type="button" id="newFilmSubmit" class="btn btn-info btn">Update</button>
+        </form>
+        <script>$('#inputFilmRelease').datepicker({
+            startView: 2,
+            format: "dd-mm-yyyy",
+            todayHighlight: true,
+            disableTouchKeyboard: true,
+            autoclose: true
+        });</script>
+    </div>
+    <div class='col-12 col-md-1 mr-auto mr-md-0 order-first order-md-last mb-2 mb-md-0'>
+        <div class='bg-light border rounded p-2'>
+            <h6 class="text-center font-weight-bold">Film Status</h6>
+            <div class="custom-control custom-switch text-center text-success">
+                <input type="checkbox" class="custom-control-input" id="customSwitch1" onclick="Cinema.updateFilmStatus('{filmId}', '#customSwitch1')" {filmStatus}>
+                <label class="custom-control-label text-center" for="customSwitch1"></label>
+            </div>
+        </div>
+    </div>
+</div>

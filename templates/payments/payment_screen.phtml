@@ -1,0 +1,57 @@
+<!--<script src="https://js.stripe.com/v3/"></script>
+<script src="/assets/js/Payments.js"></script>-->
+<div class="container p-3">
+<form id='payment-form'>
+    <div class="container">
+        <div id="payment-errors" class="alert alert-danger text-center" style="display:none;"></div>
+    </div>
+            <!-- placeholder for Elements -->
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label for="card-number">Card Number</label>
+                        <div id="card-number" style="padding:10px;"></div>
+                        <div id="card-number-errors" class="invalid-feedback" role="alert"></div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-group">
+                        <label for="card-exp">Card Expiry</label>
+                        <div id="card-expiry" style="padding:10px;"></div>
+                        <div id="card-expiry-errors" class="invalid-feedback" role="alert"></div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="form-group">
+                        <label for="card-cvc">Card CVC</label>
+                        <div id="card-cvc" style="padding:10px;"></div>
+                        <div id="card-cvc-errors" class="invalid-feedback" role="alert"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="card-number-errors" role="alert"></div>
+    <button class="btn btn-success btn-block" type="submit">
+        <span id="form-BtnTxt">Pay (£%COST%)</span>
+        <span id="form-loader" style="display:none;">
+            <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+            Processing...
+        </div>
+        </span>
+    </button>
+</form>
+</div>
+<script>
+    /*Payments.start("%PUBLIC_KEY%", "%TRANSACTION_ID%", {
+        onComplete: function(){
+
+            alert("The payment process has now been completed. Thanks for booking.");
+
+        },
+        onError: function(error) {
+            $("#payment-errors").html(error.message).show();
+            alert("TEST ERROR: " + error.message);
+        }
+    });*/
+</script>

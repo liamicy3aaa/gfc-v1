@@ -14,6 +14,8 @@ include "../routes/film.php";
 include "../routes/booking.php";
 include "../routes/account.php";
 include "../routes/manage.php";
+include "../routes/auth.php";
+include "../routes/payments.php";
 ///////////////////
 
 $app->get('/', function (Request $request, Response $response, array $args) {
@@ -31,21 +33,44 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 
         $films = $cinema->getFilms($r["_films"]);
 
-        unset($r["_films"]);
-
+        $filmInfo = array();
         $filmData = array();
 
-        foreach ($films as $index => $film) {
+        foreach($films as $item => $film) {
 
-            $item = $film;
-            $item["showtimes"] = $r[$film["id"]];
+            if($film["film_status"] == 1) {
 
-            $filmData[] = $item;
+                $item = $film;
+                $item["showtimes"] = $r[$film["id"]];
+
+                $filmInfo[$film["id"]] = $item;
+
+            }
 
         }
 
+        foreach (array_unique($r["_films"]) as $id => $film) {
+            
+            if(isset($filmInfo[$film]["film_status"]) && $filmInfo[$film]["film_status"] == 1) {
+
+            $filmData[] = $filmInfo[$film];
+            
+            }
+
+        }
+
+        unset($r["_films"]);
+        
+        if(empty($filmData)) {
+            
+            $films = "<div class='alert alert-info text-center my-3'>No films currently showing.</div>";
+            
+        } else {
+
 
         $films = $cinema->buildFilmList($filmData);
+        
+        }
 
     }
 

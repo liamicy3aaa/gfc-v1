@@ -1,0 +1,40 @@
+<div class="container-fluid">
+
+    <!-- Page Heading -->
+    <a href='/Manage/films' class="btn btn-info btn-sm mb-2"> < Back</a>
+    <h1 class="h3 mb-0 text-gray-800"><?php print $data["_title"]; ?></h1>
+    <p class="mb-4">Below you will find information regarding this film.</p>
+
+    <div class="card shadow mb-4">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-12 col-sm-8">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link <?php print (($data["op"] == "info") ? "active" : "");?>" href="/Manage/films/<?php print $data["film_id"];?>">Info</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php print (($data["op"] == "media") ? "active" : "");?>" href="/Manage/films/<?php print $data["film_id"];?>/media">Media</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php print (($data["op"] == "showtimes") ? "active" : "");?>" href="/Manage/films/<?php print $data["film_id"];?>/showtimes">showtimes</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-12 col-sm-4 order-first order-sm-last">
+                    <?php if($data["op"] == "showtimes") {?>
+                    <button onclick="Cinema.addShowing('<?php print $data["film_id"];?>');" class="d-inline float-right btn btn-success btn-icon-split btn-sm">
+                                <span class="icon text-white-50"><i class="fas fa-plus"></i></span>
+                                <span class="text">Add showing</span>
+                    </button>
+                    <?php }?>
+                    <p class="d-block d-sm-none"> </p>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <?php print $data["html"]; ?>
+        </div>
+    </div>
+</div>
+<!-- /.container-fluid -->

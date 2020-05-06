@@ -79,6 +79,12 @@
     
 }
 
+.film-description {
+
+    text-overflow: ellipsis;
+
+}
+
 .film-certificate {
     
     font-size: 13px;

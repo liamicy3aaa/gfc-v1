@@ -3,10 +3,12 @@
 class user {
     
     private $conn;
+    private $manageAccess;
     
     public function __construct($db) {
         
         $this->conn = $db;
+        $this->manageAccess = array("superuser");
         
         
     }
@@ -98,12 +100,22 @@ class user {
         // Get users information
         $user = $this->conn->query("SELECT * FROM gfc_users WHERE user_id = ?", $id)->fetchArray();
         
+        // Checking user has an account that is allowed to login
+        if(!in_array($user["user_type"], $this->manageAccess)) {
+            
+            return array("status" => false, "reason" => "invalid_account_type", "reason_desc" => "Invalid account type for this area.");
+            
+        }
+        
         // Setup session
         $_SESSION["user"] = array();
         $_SESSION["user"]["id"] = $user["id"];
         $_SESSION["user"]["type"] = $user["user_type"];
         $_SESSION["user"]["username"] = $user["user_id"];
         $_SESSION["user"]["name"] = $user["user_name"]; 
+        
+        // Logging login
+        $this->logLogin($user["id"]);
         
         // Checking if redirect url has been provided
         
@@ -185,7 +197,7 @@ class user {
             
         }
         
-        // Encrypt password
+        // Hash password
         $user["user_pwd"] = password_hash($user["user_pwd"], PASSWORD_DEFAULT);
         
         // Additional info
@@ -213,12 +225,30 @@ class user {
             $count++;
             
         }
-          //die("INSERT INTO gfc_users ($columns) VALUES ($values)");
+
         // Running query
         $r = $this->conn->query("INSERT INTO gfc_users ($columns) VALUES ($values)");
         
         return true;
         
+        
+    }
+    
+    public function logLogin($user) {
+        
+        $time = time();
+        
+        $r = $this->conn->query("UPDATE gfc_users SET user_lastlogin = ? WHERE id = ?", $time, $user)->affectedRows();
+        
+        if($r < 1) {
+            
+            return false;
+            
+        } else {
+            
+            return true;
+            
+        }
         
     }
     
@@ -347,6 +377,19 @@ class user {
         $status = ((isset($_SESSION["user"])) ? true : false);
         
         return $status;
+        
+    }
+    
+    public function loginRequired() {
+        
+        if(!$this->loggedIn()) {
+
+            notifications::add("info", "Please login to access this page.");
+            
+            header("Location: /Manage/authenticate/login");
+            exit;
+            
+        }
         
     }
     

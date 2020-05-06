@@ -1,0 +1,41 @@
+<div class="container container-fluid">
+    <h1 class="h3 mb-0 text-gray-800">TICKET POS</h1>
+    <p class="mb-4">Enter the booking reference below to validate a ticket / booking.</p>
+    <div class="row mb-4">
+        <div class="col-9 col-md-5">
+            <input id="bookingInput" class="form-control form-control-lg" type="text" placeholder="BOOKING REFERENCE" />
+        </div>
+        <div class="col-3 col-md-7">
+            <button id="bookingSearch" class="btn btn-info btn-lg">
+                <span class="searchIcon"><i class="fas fa-search"></i></span>
+                <span class="searchSpinner spinner-border spinner-border-sm" style="display:none;"></span>
+            </button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="card shadow mb-4">
+                <div id="bookingHeader" class="card-header py-4">
+                    <span class="h3">Awaiting search...</span>
+                </div>
+                <div id="bookingBody" class="card-body">
+                    <div id="bookingContent"></div>
+                    <div id="bookingOptions" class="container mt-2" style="display:none;">
+                        <div class="row">
+                            <div class="col-12 my-1 col-md-7">
+                                <button id="bookingValidate" class="btn btn-success btn-block">MARK AS USED</button>
+                            </div>
+                            <div class="col-12 my-1 col-md-5">
+                                <hr class="d-block d-md-none"/>
+                                <button id="bookingClear" class="btn btn-warning btn-block">CLEAR</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    Cinema.startTicketPOS();
+</script>

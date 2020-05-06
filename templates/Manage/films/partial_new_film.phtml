@@ -1,0 +1,38 @@
+<form action="/Manage/ajax/film/new" method="POST">
+    <div class="form-group">
+        <label for="inputFilmName">Film title</label>
+        <input type="text" name="filmName" class="form-control" id="inputFilmName" placeholder="Enter Film title">
+    </div>
+    <div class="form-group">
+        <label for="inputFilmDesc">Film Description</label>
+        <textarea name="filmDesc" class="form-control" id="inputfilmDesc" placeholder="Enter Film description.."></textarea>
+    </div>
+    <div class="form-group">
+        <label for="inputFilmRelease">Film release date</label>
+        <input name="filmRelease" id="inputFilmRelease" type="text" class="form-control" placeholder="Select date">
+    </div>
+    <div class="form-group">
+        <label for="inputFilmRating">Film rating</label>
+        <select name="filmRating" id="inputFilmRating" class="form-control">
+            <option value="X" disabled selected>Select Rating...</option>
+            <option value="U">U</option>
+            <option value="PG">PG</option>
+            <option value="12A">12A</option>
+            <option value="15">15</option>
+            <option value="18">18</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="inputFilmLength">Film runtime <small>(In minutes)</small></label>
+        <input name="filmRuntime" type="number" id="inputFilmLength" class="form-control" placeholder="Enter film runtime">
+    </div>
+    <p class="small">You will be able to alter / enter more information for the film on the next page</p>
+    <button type="button" id="newFilmSubmit" class="btn btn-success btn-block">Add</button>
+</form>
+<script>$('#inputFilmRelease').datepicker({
+    startView: 2,
+    format: "dd-mm-yyyy",
+    todayHighlight: true,
+    disableTouchKeyboard: true,
+    autoclose: true
+});</script>

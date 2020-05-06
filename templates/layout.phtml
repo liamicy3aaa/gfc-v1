@@ -6,18 +6,20 @@
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php if(isset($data["_title"])) { print $data["_title"] . " | "; }?><?=$title?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/css/Footer-Dark.css">
     <link rel="stylesheet" href="/assets/css/Navigation-Clean.css">
     <link rel="stylesheet" href="/assets/css/styles.css">
     <!-- Jquery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
     <!-- ICONS -->
     <script src="https://kit.fontawesome.com/9bb8a45ecf.js"></script>
+    <script src="/assets/Manage/js/modal.js"></script>
+    <script src="/assets/js/Cinema.js"></script>
 </head>
 
-<body>
+<body class="sidebar-toggled">
     <div id="page-header">
         <nav class="navbar navbar-dark navbar-expand-md navigation-clean" style="background-color:rgb(40,45,50);">
             <div class="container-fluid"><a class="navbar-brand text-white" href="/"><?php print $data["__webTitle"];?></a><button class="navbar-toggler" data-toggle="collapse" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
@@ -34,6 +36,7 @@
             </div>
         </nav>
     </div>
+    <div class="alert alert-info text-center mb-0 d-none"></div>
     <?php print notifications::display(); ?>
     <div class="container-fluid px-0" id="page-content">
         <?=$content?>

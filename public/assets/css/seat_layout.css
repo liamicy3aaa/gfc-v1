@@ -13,6 +13,13 @@
 
 }
 
+.seat-space {
+
+    max-width:30px;
+    max-height:30px;
+
+}
+
 .seat-double {
 
     max-width:60px;

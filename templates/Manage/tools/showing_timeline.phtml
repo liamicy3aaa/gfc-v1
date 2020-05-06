@@ -1,0 +1,60 @@
+<link rel="stylesheet" type="text/css" href="/assets/Manage/css/jquery-ui.min.css">
+<link href="/assets/Manage/css/schedule_style.css" rel="stylesheet">
+<div class="container-fluid">
+
+          <!-- Page Heading -->
+            <h1 class="h3 mb-0 text-gray-800"><?php print $data["_title"]; ?></h1>
+            <p class="mb-4">Below you will find the timeline for your upcoming shows.</p>
+
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="d-none m-0 font-weight-bold text-primary" style="line-height:2;">Schedule</h6>
+                    <input name="scheduleDate" id="scheduleDate" type="text" class="" placeholder="Select date" autocomplete="off" value="<?php print $data["date"];?>">
+                </div>
+                <div class="card-body">
+                    <div id="schedule"></div>        
+                </div>
+            </div>
+</div>
+<!--<div class="container my-5 px-0" style="min-height:300px;">-->
+        
+</div>
+<script src="/assets/Manage/js/jquery-ui.min.js"></script>
+<script src="/assets/Manage/js/jq.schedule.js"></script>
+<script>
+    $('#scheduleDate').datepicker({
+        startView: 0,
+        format: "dd-mm-yyyy",
+        todayHighlight: true,
+        disableTouchKeyboard: true,
+        autoclose: true,
+        zIndexOffset: 101
+    });
+
+    $("#scheduleDate").on("change", function(){
+
+        window.location.href = (location.protocol + '//' + location.host + location.pathname + "?date=" + $("#scheduleDate").val());
+
+    });
+
+$("#schedule").timeSchedule({
+  startTime: "00:00", // schedule start time(HH:ii)
+  endTime: "23:59",   // schedule end time(HH:ii)
+  widthTime:60 * 5,  // cell timestamp example 10 minutes
+  timeLineY:60,       // height(px)
+  verticalScrollbar:20,   // scrollbar (px)
+  timeLineBorder:2,   // border(top and bottom)
+  debug:"#debug",
+  draggable:false,
+  resizable: false,
+  onScheduleClick:function(node, time, timeline){
+    alert("time: " + time);  
+  },
+  onClick:function(node, data) {
+      
+      location.href = data.data.url;
+      
+  },    
+  rows : <?php print json_encode($data["schedule"]); ?>,
+});
+</script>
