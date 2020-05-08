@@ -767,6 +767,158 @@ $app->group("/Manage", function(){
         return $response->WithJson(array("html" => "Confirmation sent successfully"), 200);
 
     });
+
+    $this->map(["GET", "POST"],"/ajax/bookings/{id}/movePerformance[/{op}]", function($request, $response, $args){
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        $cinema = $this->get("cinema");
+
+        $op = ((isset($args["op"])) ? $args["op"] : "start");
+
+        switch($op) {
+            case "selection":
+                if(!$request->isPost()) {
+
+                    return $response->withJson(array("status" => 400, "error" => "Operation must be called via POST"), 400);
+
+                }
+
+                $postBody = $request->getParsedBody();
+
+                if(!isset($postBody["showId"])) {
+
+                    return $response->withJson(array("status" => 400, "error" => "missing_param"), 400);
+
+                }
+
+                $bookingInfo = $cinema->getBookingInfo(cipher::decrypt($args["id"]));
+
+                // Getting seat Ids
+                $seats = $cinema->getSeatingInfo(json_decode($bookingInfo["booking_seats"], true));
+
+                $seatLabels = array();
+
+                foreach($seats as $seat) {
+
+                    $seatLabels[] = $seat["seat_row_label"] . $seat["seat_number"];
+
+                }
+
+                $seatFinal = implode(",", $seatLabels);
+
+                $screen = $cinema->buildSeatingPlan(cipher::decrypt($postBody["showId"]), 1);
+
+                return $response->withJson(array(
+                    "html" => $screen["html"],
+                    "allowed" => $bookingInfo["booking_seats_total"],
+                    "seats" => $seatFinal
+                ), 200);
+
+                break;
+
+
+            case "start":
+            $itemHtml = "";
+            $bookingInfo = $cinema->getBookingInfo(cipher::decrypt($args["id"]));
+
+            $data = $cinema->getMovePerformanceShowings($bookingInfo["showtime_id"], $bookingInfo["film_id"]);
+
+            if (count($data) < 1) {
+
+            $itemHtml .= "<div class='container p-5 text-center text-secondary'><h5>No other performances available</h5></div>";
+
+            }
+            else {
+
+                foreach ($data as $id => $item) {
+
+                    $itemHtml .= '<a class="MP-item list-group-item list-group-item-action my-1 ' . (($item["available"] < 1) ? "disabled bg-light" : "") . '" href="Javacript:void(0)" data-showid="' . cipher::encrypt($item["id"]) .'">';
+                    $itemHtml .= '<div class="d-flex w-100 py-1">';
+                    $itemHtml .= '<div class="col-8">';
+                    $itemHtml .= '<h5 class="mb-1">' . date("l jS F", $item["time"]) . '</h5>';
+                    $itemHtml .= '<small class="mb-1">' . date("g:ia", $item["time"]) . '</small>';
+                    $itemHtml .= '</div>';
+                    $itemHtml .= '<div class="col-4 justify-content-inbetween text-right">';
+                    $itemHtml .= '<small>' . (($item["available"] < 1) ? "SOLD OUT" : $item["available"] . " seats remaining") . '<br>Screen ' . $item["screen_name"] . '</small>';
+                    $itemHtml .= '</div>';
+                    $itemHtml .= '</div>';
+                    $itemHtml .= '</a>';
+
+                }
+
+            }
+
+            $html = str_replace(array("{items}"),
+                array($itemHtml),
+                file_get_contents("../templates/Manage/bookings/partial_move_performance.phtml"));
+
+            return $response->withJson($html, 200);
+            break;
+
+            case "process":
+
+                if(!$request->isPost()) {
+
+                    return $response->withJson(array("status" => 400, "error" => "Operation must be called via POST"), 400);
+
+                }
+
+                $postBody = $request->getParsedBody();
+
+                if(!isset($postBody["showId"]) || !isset($postBody["seats"])) {
+
+                    return $response->withJson(array("status" => 400, "error" => "missing_param"), 400);
+
+                }
+
+
+                $bookingInfo = $cinema->getBookingInfo(cipher::decrypt($args["id"]));
+
+                $show = cipher::decrypt($postBody["showId"]);
+                $seats = array();
+
+                foreach($postBody["seats"] as $seat) {
+
+                    $seats[] = cipher::decrypt($seat);
+
+                }
+
+                $update = $cinema->updateBooking($bookingInfo["booking_reference"], array(
+                    "showtime_id" => $show,
+                    "booking_seats" => $seats,
+                    "booking_ts" => time()
+                ));
+
+                $cinema->sendBookingConfirmation($bookingInfo["booking_reference"]);
+
+                notifications::add("success", "Booking successfully moved to a different performance.");
+
+                // Creating summary page
+                $info = $cinema->getShowInfo($show);
+
+                $summary = "";
+
+                $summary .= "<div class='container container-fluid'>";
+                    $summary .= "<h4 class='text-dark'>New performance date</h4>";
+                    $summary .= "<h3>" . date("l jS F g:ia", $info["time"]) . "</h3><br/>";
+                    $summary .= "<h4 class='text-dark'>Screen</h4>";
+                    $summary .= "<h3>Screen " . $info["screen_name"] . "</h3>";
+                $summary .= "</div>";
+                $summary .= "<button id='MPClose' class='btn btn-info btn-block my-2'>Close</button>";
+
+
+                return $response->withJson(array("status" => 200, "html" => $summary), 200);
+                break;
+
+            default:
+                return $response->withJson(array("status" => 400, "error" => "Invalid command"), 400);
+                break;
+
+    }
+
+    });
     
      /** END OF AJAX */
 

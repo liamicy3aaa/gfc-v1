@@ -854,6 +854,180 @@ var Cinema = {
 
         });
 
+    },
+
+    movePerformance: function(bookingId) {
+
+        showModal("Move Performance", "<h3 class='p-5 text-center'>Loading...</h3>", {"size":"lg", "vcenter":true});
+
+        $.ajax({
+            url:"/Manage/ajax/bookings/" + bookingId + "/movePerformance",
+            method: "GET",
+            success: function(result) {
+
+                updateModal(result);
+                console.log("success");
+
+                $(".MP-item").on("click", function(){
+
+                    let id = $(this).attr("data-showid");
+
+                    $("#MPstep1").hide();
+                    $(".Bkloader").show();
+
+                    $.ajax({
+                        url: "/Manage/ajax/bookings/" + bookingId + "/movePerformance/selection",
+                        method: "POST",
+                        data: {showId:id},
+                        success: function(result) {
+
+                            $(".Bkloader").hide();
+                            $("#MPstep2 .screen tbody").html(result.html);
+                            $("#selectionAllowed").html(result.allowed);
+                            $("#originalSeats").html(result.seats);
+                            $("#MPstep2").show();
+
+                            Seatpicker.start({
+                                ignoreSpaces: true,
+                                seatOnClick: function(selector, seatId) {
+
+                                    if($(selector).closest("td").hasClass("seat-taken")) {
+
+                                        alert("SEAT TAKEN");
+                                        return;
+
+                                    }
+
+                                    if(Seatpicker.settings.selectedSeats.includes(seatId)) {
+
+                                        Seatpicker.settings.selectedSeats = Seatpicker.settings.selectedSeats.filter(function(elem){
+
+                                            return elem != seatId;
+
+                                        });
+
+                                        let url = $(selector).attr("src");
+                                        let finalUrl = url.replace("RED", "GREEN");
+
+                                        $(selector).attr("src", finalUrl);
+                                        $("#selectionCount").html(Seatpicker.selectedSeatCount());
+
+                                    } else {
+
+                                        if(Seatpicker.selectedSeatCount() >= result.allowed) {
+
+                                            alert("Maximum number of seats selected.");
+                                            return;
+
+                                        }
+
+                                        Seatpicker.settings.selectedSeats.push(seatId);
+                                        let url = $(selector).attr("src");
+                                        let finalUrl = url.replace("GREEN", "RED");
+
+                                        $(selector).attr("src", finalUrl);
+
+                                        $("#selectionCount").html(Seatpicker.selectedSeatCount());
+
+                                    }
+
+                                    if(Seatpicker.selectedSeatCount() == result.allowed) {
+
+                                        $("#MPstep2Confirm").removeClass("btn-outline-success");
+                                        $("#MPstep2Confirm").addClass("btn-success");
+
+                                    } else {
+
+                                        $("#MPstep2Confirm").removeClass("btn-success");
+                                        $("#MPstep2Confirm").addClass("btn-outline-success");
+
+                                    }
+
+                                }
+                            });
+
+                            $("#MPstep2Back").unbind("click").on("click", function(){
+
+                                $("#MPstep2").hide();
+                                $("#MPstep2 .screen tbody").html("");
+                                $("#selectionCount").html("0");
+                                $("#MPstep2Confirm").removeClass("btn-success");
+                                $("#MPstep2Confirm").addClass("btn-outline-success");
+
+                                while(Seatpicker.settings.selectedSeats.length) { Seatpicker.settings.selectedSeats.pop(); }
+
+                                $("#MPstep1").show();
+
+                            });
+
+                            $("#MPstep2Confirm").unbind("click").on("click", function(){
+
+                                if(Seatpicker.selectedSeatCount() < result.allowed) {
+
+                                    alert("Please finish selecting the remaining seats.");
+                                    return;
+
+                                }
+
+                                if(!confirm("Are you happy with the selection? (Clicking yes will apply the change to the booking)")) {
+
+                                    return;
+
+                                }
+
+                                $("#MPstep2").hide();
+                                $(".Bkloader").show();
+                                $.ajax({
+                                    url: "/Manage/ajax/bookings/" + bookingId + "/movePerformance/process",
+                                    method: "POST",
+                                    data: {seats:Seatpicker.selectedSeats(), showId: id},
+                                    success: function(result) {
+
+                                        updateModal(result.html);
+
+                                        $("#MPClose").on("click", function(){
+
+                                            closeModal();
+                                            location.reload();
+
+                                        });
+
+                                    },
+                                    error: function(err) {
+
+                                        $(".Bkloader").hide();
+                                        $("#MPstep2").show();
+                                        alert("An error has occurred");
+
+                                    }
+
+                                });
+
+                            });
+
+                        },
+                        error: function(err) {
+
+                            $(".Bkloader").hide();
+                            $("#MPstep1").show();
+
+                            alert("An error occurred");
+
+                        }
+                    });
+
+                });
+
+            },
+            error: function(err) {
+
+                alert("An error has occurred. Please try again later.");
+                closeModal();
+
+            }
+        });
+
     }
+
 
 };
