@@ -19,13 +19,19 @@ var Seatpicker = {
                     return elem != seatId;
                     
                 });
+
+                let url = $(selector).attr("src");
+                let finalUrl = url.replace("RED", "GREEN");
                 
-                $(selector).attr("src", "/assets/images/seats/1-seat_GREEN.png");
+                $(selector).attr("src", finalUrl);
             
             } else {
                 
                 Seatpicker.settings.selectedSeats.push(seatId);
-                $(selector).attr("src", "/assets/images/seats/1-seat_RED.png");
+                let url = $(selector).attr("src");
+                let finalUrl = url.replace("GREEN", "RED");
+
+                $(selector).attr("src", finalUrl);
                 
             }
             
@@ -33,6 +39,8 @@ var Seatpicker = {
     },
     
     start: function(config) {
+
+        while (Seatpicker.settings.selectedSeats.length) { Seatpicker.settings.selectedSeats.pop(); }
         
         $.extend(Seatpicker.settings, config);
         
