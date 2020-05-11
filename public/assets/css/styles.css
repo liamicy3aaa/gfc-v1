@@ -187,6 +187,40 @@ ul.movie-points li i {
     transition:.5s;
 }
 
+/** CAROUSEL **/
+
+.carousel-indicators li {
+    width: 10px;
+    height: 10px;
+    border-radius: 100%;
+}
+
+.carousel-fade .carousel-item {
+    opacity: 0;
+    transition-duration: .6s;
+    transition-property: opacity;
+}
+
+.carousel-fade .carousel-item.active,
+.carousel-fade .carousel-item-next.carousel-item-left,
+.carousel-fade .carousel-item-prev.carousel-item-right {
+    opacity: 1;
+}
+
+.carousel-fade .active.carousel-item-left,
+.carousel-fade .active.carousel-item-right {
+    opacity: 0;
+}
+
+.carousel-fade .carousel-item-next,
+.carousel-fade .carousel-item-prev,
+.carousel-fade .carousel-item.active,
+.carousel-fade .active.carousel-item-left,
+.carousel-fade .active.carousel-item-prev {
+    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
+}
+
 /** FILM BANNER OVERLAY **/
 .film-banner {
     
@@ -197,6 +231,7 @@ ul.movie-points li i {
 .film-banner-inner {
     
     position:relative;
+    padding-top:130px;
     
 }
 
@@ -213,7 +248,7 @@ ul.movie-points li i {
 
 .film-banner:before {
     position: absolute;
-    height:462px;
+    height:534px;
     content: '';
     top: 0;
     right: 0;
@@ -234,6 +269,18 @@ ul.movie-points li i {
         
         max-height:342px;
         
+    }
+
+    .film-banner-inner {
+
+        padding-top: 50px;
+
+    }
+
+    .film-banner-inner p.h2 {
+
+        font-size: 2.5rem !important;
+
     }
     
     

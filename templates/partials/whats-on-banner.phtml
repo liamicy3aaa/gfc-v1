@@ -1,13 +1,8 @@
-<div class="jumbotron text-white pl-4 pl-md-5 film-hero film-banner banner-dark" style="min-height: 462px;
-background-image: url('%BANNER%');
-background-repeat: no-repeat;
-background-size: cover;
-background-color: black;
-border-radius: 0px;
-text-shadow:4px 2px 4px black;">
-    <div class="container container-fluid film-banner-inner">
-        <p class="h2 display-4 pt-5 mt-5 pt-sm-3 align-middle">%NAME%</p>
-        <p class="lead align-middle">%DESC%</p>
-        <button onclick="Cinema.openTrailer('%TRAILER%');" class='btn btn-light' style='border-radius:20px'>PLAY TRAILER</button>
+<div id="whatsOnBanner" class="carousel carousel-fade slide film-hero film-banner banner-dark mb-5" data-ride="carousel">
+    <ol class="carousel-indicators">
+        %indicators%
+    </ol>
+    <div class="carousel-inner">
+        %items%
     </div>
 </div>

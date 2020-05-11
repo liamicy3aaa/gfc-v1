@@ -36,20 +36,50 @@ class cinema {
     */
     public function buildPromoBanner() {
 
-            $promo = $this->conn->query("SELECT value FROM gfc_config WHERE `key` = ?", "_promoBanner")->fetchArray();
+        // Step 1 - GET IDs of the films for films that have upcoming showings (Limit 4)
+        $films = $this->getShowtimes(false, 4);
 
-            $data = json_decode($promo["value"], true);
+        $filmsSorted = array_values(array_unique($films["_films"]));
+
+        $filmInfo = $this->getFilms($filmsSorted);
+
+        $items = array();
+        $indicators = array();
+
+        foreach($filmInfo as $id => $data) {
+
+            $position = array_search($data["id"], $filmsSorted);
+            $active = (($position < 1) ? "active" : "");
+            $indicators[$position] = "<li data-target=\"#whatsOnBanner\" data-slide-to=\"$position\" class=\"$active\"></li>";
 
             $fields = array(
                 "%BANNER%",
                 "%NAME%",
                 "%DESC%",
-                "%TRAILER%"
+                "%BTN%",
+                "%FIRST%"
             );
 
-            $data = array($data["banner"], $data["title"], $data["desc"], $data["trailer"]);
+            if(strlen($data["film_trailer"]) > 3) {
 
-            return str_replace($fields, $data, file_get_contents("../templates/partials/whats-on-banner.phtml"));
+                $trailerBtn = "<button onclick=\"Cinema.openTrailer('" . $data["film_trailer"] . "');\" class='btn btn-light' style='border-radius:20px'>PLAY TRAILER</button>";
+
+            } else {
+
+                $trailerBtn = "";
+
+            }
+
+            $data = array($data["film_banner"], $data["film_name"], substr($data["film_desc"], 0, 150) . "...", $trailerBtn, $active);
+
+            $items[$position] = str_replace($fields, $data, file_get_contents("../templates/partials/whats-on-banner-item.phtml"));
+
+        }
+
+        ksort($items);
+        ksort($indicators);
+
+        return str_replace(array("%items%", "%indicators%"), array(implode("", $items), implode("", $indicators)), file_get_contents("../templates/partials/whats-on-banner.phtml"));
 
     }
 
@@ -1042,14 +1072,15 @@ class cinema {
         }
     }
     
-    public function getShowtimes($id = false) {
+    public function getShowtimes($id = false, $limit = false) {
 
         $time = time();
+        $limit = (($limit !== false) ? " LIMIT $limit" : "");
         
         if($id !== false) {
             
             // List show times for a specific film
-            $times = $this->conn->query("SELECT * FROM gfc_films_showtimes WHERE film_id = ? AND `time` > ? ORDER BY time ASC", $id, $time)->fetchAll();
+            $times = $this->conn->query("SELECT * FROM gfc_films_showtimes WHERE film_id = ? AND `time` > ? ORDER BY time ASC $limit", $id, $time)->fetchAll();
             
             return $times;
             
@@ -1057,7 +1088,7 @@ class cinema {
             
             // List all available showtimes by film id
             
-            $times = $this->conn->query("SELECT id, film_id, date, time FROM gfc_films_showtimes WHERE `time` > ? ORDER BY time ASC", $time)->fetchAll();
+            $times = $this->conn->query("SELECT id, film_id, date, time FROM gfc_films_showtimes WHERE `time` > ? ORDER BY time ASC $limit", $time)->fetchAll();
             
             $data = array();
             $filmIds = array();
