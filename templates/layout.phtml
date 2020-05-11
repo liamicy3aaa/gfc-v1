@@ -21,10 +21,9 @@
 
 <body class="sidebar-toggled">
     <div id="page-header">
-        <nav class="navbar navbar-dark navbar-expand-md navigation-clean" style="background-color:rgb(40,45,50);">
+        <nav class="navbar navbar-dark fixed-top navbar-expand-md navigation-clean navbar-blackfade px-4 py-4" <!--style="background-color:rgb(40,45,50);-->">
             <div class="container-fluid"><a class="navbar-brand text-white" href="/"><?php print $data["__webTitle"];?></a><button class="navbar-toggler" data-toggle="collapse" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse"
-                    id="navcol-1">
+                <div class="collapse navbar-collapse navbar-bg" id="navcol-1">
                     <ul class="nav navbar-nav ml-auto">
                         <li class="nav-item" role="presentation"><a class="nav-link" href="/">What's On</a></li>
                         <li class="nav-item" role="presentation"><a class="nav-link" href="/my-account">My Account</a></li>
@@ -72,7 +71,22 @@
             
             $('[data-toggle="tooltip"]').tooltip()
             
-        })
+        });
+
+        // Floating Navbar on scroll
+        $(window).scroll(function() {
+
+            //if I scroll more than 1000px...
+            if($(window).scrollTop() > 100){
+
+                $("nav").addClass("navbar-blackfade-scrolled").removeClass("py-4");
+
+            } else {
+
+                $("nav").removeClass("navbar-blackfade-scrolled").addClass("py-4");
+
+            }
+        });
         
     </script>
 </body>

@@ -131,6 +131,62 @@ ul.movie-points li i {
     color: #4a4a4a;
 }
 
+/** NAVBAR **/
+
+.navbar-bg {
+
+
+
+}
+
+.navbar-blackfade {
+
+    background: linear-gradient(0deg, rgba(2,1,14,0) 0%, rgb(2,1,14) 70%);
+    background-color:transparent;
+    -webkit-transition: background .5s ease-out;
+    -moz-transition: background .5s ease-out;
+    -o-transition: background .5s ease-out;
+    transition: background .5s ease-out;
+
+    /* ...and now for the proper property */
+    /*transition:.5s;*/
+
+}
+
+.navbar-blackfade .navbar-brand {
+    font-size: 30px;
+    -o-transition:.5s;
+    -ms-transition:.5s;
+    -moz-transition:.5s;
+    -webkit-transition:.5s;
+    /* ...and now for the proper property */
+    transition:.5s;
+}
+
+.navbar-blackfade-scrolled {
+
+    background:none !important;
+    background-color:rgb(40,45,50) !important;
+    -webkit-transition: background .5s ease-out;
+    -moz-transition: background .5s ease-out;
+    -o-transition: background .5s ease-out;
+    transition: background .5s ease-out;
+
+    /* ...and now for the proper property */
+    /*transition:.5s;*/
+
+}
+
+.navbar-blackfade-scrolled .navbar-brand {
+    font-size: 20px;
+    -o-transition:.5s;
+    -ms-transition:.5s;
+    -moz-transition:.5s;
+    -webkit-transition:.5s;
+    /* ...and now for the proper property */
+    transition:.5s;
+}
+
 /** FILM BANNER OVERLAY **/
 .film-banner {
     
@@ -167,6 +223,12 @@ ul.movie-points li i {
 
   /** MEDIA QUERIES **/
 @media (max-width: 767px) {
+
+    .navbar:not(.navbar-blackfade-scrolled) .navbar-bg {
+
+        background-color:#000;
+
+    }
     
     .film-thumb {
         
