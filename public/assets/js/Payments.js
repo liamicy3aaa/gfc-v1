@@ -6,6 +6,7 @@ var Payments = {
         serverUrl: "/payments/process/",
         form: "#payment-form",
         error: "#payment-errors",
+        haultUI: function(status) {},
         inputs: {
             cardNumber: "#card-number",
             cardExpiry: "#card-expiry",
@@ -24,8 +25,19 @@ var Payments = {
 
         },
         onError: function(error) {
+            var mess;
 
-            $(Payments.settings.error).html(error.message).show();
+            if(typeof error == "string"){
+
+                mess = error;
+
+            } else {
+
+                mess = error.message;
+
+            }
+
+            $(Payments.settings.error).html(mess).show();
 
         }
     },
@@ -104,6 +116,7 @@ var Payments = {
             // We don't want to let default form submission happen here,
             // which would refresh the page.
             event.preventDefault();
+            Payments.settings.haultUI(true);
 
             $(Payments.settings.inputs.submitBtn.text).hide();
             $(Payments.settings.inputs.submitBtn.loader).show();
@@ -126,6 +139,7 @@ var Payments = {
             $(Payments.settings.inputs.submitBtn.loader).hide();
             $(Payments.settings.inputs.submitBtn.text).closest("button").removeAttr("disabled");
             $(Payments.settings.inputs.submitBtn.text).closest("button").removeClass("disabled");
+            Payments.settings.haultUI(false);
 
             // Show error in payment form
             Payments.settings.onError(result.error);
@@ -160,6 +174,7 @@ var Payments = {
                 $(Payments.settings.inputs.submitBtn.loader).hide();
                 $(Payments.settings.inputs.submitBtn.text).closest("button").removeAttr("disabled");
                 $(Payments.settings.inputs.submitBtn.text).closest("button").removeClass("disabled");
+                Payments.settings.haultUI(false);
 
             } else if (response.requires_action) {
                 // Use Stripe.js to handle required card action
@@ -182,6 +197,7 @@ var Payments = {
             $(Payments.settings.inputs.submitBtn.loader).hide();
             $(Payments.settings.inputs.submitBtn.text).closest("button").removeAttr("disabled");
             $(Payments.settings.inputs.submitBtn.text).closest("button").removeClass("disabled");
+            Payments.settings.haultUI(false);
 
         } else {
             // The card action has been handled

@@ -1239,9 +1239,12 @@ class cinema {
             $html .= "<p class='pt-2 mb-1'>$date</p>";
             
             foreach($day as $show) {
-                
+
+                //$bookingURL = "/booking/new/" . cipher::encrypt($show["film_id"]) . "/" . cipher::encrypt($show["id"]); // V1
+                $bookingURL = "/booking/v2/new/" . cipher::encrypt($show["id"]); // V2
+
                 $message = "onclick='alert(\"This show is fully booked.\")'";
-                $config = (($this->availableSeats($show["id"])["available"] < 1) ? "href='Javascript:void(0);' class='btn btn-danger' $message" : "href='/booking/new/" . cipher::encrypt($show["film_id"]) . "/" . cipher::encrypt($show["id"]) . "' class='btn btn-primary'");
+                $config = (($this->availableSeats($show["id"])["available"] < 1) ? "href='Javascript:void(0);' class='btn btn-danger' $message" : "href='" . $bookingURL . "' class='btn btn-primary'");
 
                 
                 $time = date("H:i", $show["time"]);

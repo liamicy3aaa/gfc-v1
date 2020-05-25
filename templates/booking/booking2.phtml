@@ -1,0 +1,32 @@
+<head>
+    <link rel="stylesheet" href="/assets/css/seat_layout.css">
+</head>
+<div class="jumbotron text-white pl-4 pl-md-5 film-banner film-banner-small banner-dark" style="min-height: 534px;
+background-image: url('<?php print $data["show"]["film_banner"]; ?>');
+background-repeat: no-repeat;
+background-size: cover;
+background-color: black;
+border-radius: 0px;
+text-shadow:4px 2px 4px black;">
+    <div class="container container-fluid pt-5 mt-5 film-banner-inner">
+        <p class="lead align-middle">Your booking tickets for:</p>
+        <p class="h2 display-4 pt-1 mt-1 pt-sm-1 align-middle"><?php print $data["show"]["film_name"]; ?></p>
+        <p class="lead align-middle">On <?php print date("l jS F", $data["show"]["time"]);?> at <?php print date("H:i", $data["show"]["time"]);?></p>
+        <br/>
+        <a class='text-white pt-5' href="/">< Back to what's on</a>
+    </div>
+</div>
+<div class="mt-5 mb-2 mx-3 d-none">
+    <h3>Booking screen</h3>
+</div>
+<div id='stepperContainer' class='container container-fluid my-2'></div>
+<script src="/assets/js/Seatpicker.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery-form-validator/2.3.26/jquery.form-validator.min.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="/assets/js/Payments.js"></script>
+<script src="/assets/js/Stepper.js"></script>
+<script src="/assets/js/TicketPicker.js"></script>
+<script src="/assets/js/Booking.js"></script>
+<script>
+Booking.startCinemaBooking("<?php print $data["show"]["showId"];?>", <?php print $data["ticketConfig"]; ?>, "<?php print $data["html"]; ?>");
+</script>
