@@ -1,4 +1,4 @@
-<div class="jumbotron text-white pl-4 pl-md-5 film-banner banner-dark" style="min-height: 534px;
+<div class="jumbotron text-white pl-4 pl-md-5 film-banner film-banner-small banner-dark" style="min-height: 534px;
 background-image: url('<?php print $data["banner"]; ?>');
 background-repeat: no-repeat;
 background-size: cover;
@@ -6,7 +6,7 @@ background-color: black;
 border-radius: 0px;
 text-shadow:4px 2px 4px black;">
     <div class="container container-fluid film-banner-inner">
-        <p class="h2 display-4 pt-4 mt-5 pt-sm-3 align-middle"><?php print $data["_title"]; ?></p>
+        <p class="h2 display-4 pt-4 pt-md-1 mt-4 mt-md-1 align-middle"><?php print $data["_title"]; ?></p>
         <?php if(strlen($data['trailer']) >= 1) {?><button type="button" onclick="Cinema.openTrailer('<?php print $data["trailer"]; ?>');" class='btn btn-light my-3' style='border-radius:20px; text-shadow:none;'>
                 PLAY TRAILER
             </button><?php }?>

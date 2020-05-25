@@ -226,6 +226,20 @@ ul.movie-points li i {
     
     background-image: none;
     position: relative;
+    min-height:534px;
+}
+
+.film-banner-small {
+
+    min-height: 300px !important;
+
+}
+
+.film-banner-small.banner-light:before, .film-banner-small.banner-dark:before {
+
+    min-height: 300px !important;
+    height:auto;
+
 }
 
 .film-banner-inner {
