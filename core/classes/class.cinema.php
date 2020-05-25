@@ -37,7 +37,13 @@ class cinema {
     public function buildPromoBanner() {
 
         // Step 1 - GET IDs of the films for films that have upcoming showings (Limit 4)
-        $films = $this->getShowtimes(false, 4);
+        $films = $this->getShowtimes(false, true,4);
+
+        if($films === false) {
+
+            return "<div class='mb-5' style='min-height:300px; background-color:#000;'></div>";
+
+        }
 
         $filmsSorted = array_values(array_unique($films["_films"]));
 
@@ -66,7 +72,7 @@ class cinema {
 
             } else {
 
-                $trailerBtn = "";
+                $trailerBtn = "<a class='btn btn-light' href='/film/" . cipher::encrypt($data["id"]) . "' style='border-radius:20px; text-shadow:none;'>BOOK NOW</a>";
 
             }
 
@@ -1072,15 +1078,16 @@ class cinema {
         }
     }
     
-    public function getShowtimes($id = false, $limit = false) {
+    public function getShowtimes($id = false, $onlyActive = false, $limit = false) {
 
         $time = time();
         $limit = (($limit !== false) ? " LIMIT $limit" : "");
+        $active = (($onlyActive === true) ? "AND b.film_status = 1" : "");
         
         if($id !== false) {
             
             // List show times for a specific film
-            $times = $this->conn->query("SELECT * FROM gfc_films_showtimes WHERE film_id = ? AND `time` > ? ORDER BY time ASC $limit", $id, $time)->fetchAll();
+            $times = $this->conn->query("SELECT a.* FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.film_id = ? AND a.time > ? $active ORDER BY time ASC $limit", $id, $time)->fetchAll();
             
             return $times;
             
@@ -1088,7 +1095,7 @@ class cinema {
             
             // List all available showtimes by film id
             
-            $times = $this->conn->query("SELECT id, film_id, date, time FROM gfc_films_showtimes WHERE `time` > ? ORDER BY time ASC $limit", $time)->fetchAll();
+            $times = $this->conn->query("SELECT a.id, a.film_id, a.date, a.time FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.`time` > ? $active ORDER BY time ASC $limit", $time)->fetchAll();
             
             $data = array();
             $filmIds = array();
