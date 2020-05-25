@@ -76,6 +76,8 @@ class Stepper {
         this.steps = "";
         this.currentStep = 0;
         this.totalSteps = (this.settings.steps).length;
+        this.isLoaderActive = false;
+        this.nextStepData = false;
 
         this.checkSteps(this.settings.steps);
 
@@ -87,12 +89,15 @@ class Stepper {
     };
 
     checkSteps(steps) {
+        let message = "<h4 class='my-3 p-2 text-center'>An error has occurred. Please try again later.</h4>";
 
         for(var i = 0; i < steps.length; i++) {
 
             var a = steps[i];
 
             if(!a.hasOwnProperty("onNext") || typeof a.onNext !== "function") {
+
+                $("#" + this.settings.container).append(message);
 
                 throw new Error("Step " + (i + 1) + " is missing the required onNext function or isn't a function.");
                 return;
@@ -101,7 +106,20 @@ class Stepper {
 
             if(!a.hasOwnProperty("onBack") || typeof a.onBack !== "function") {
 
+                $("#" + this.settings.container).append(message);
+
+
                 throw new Error("Step " + (i + 1) + " is missing the required onBack function or isn't a function.");
+                return;
+
+            }
+
+            if(!a.hasOwnProperty("onLoad") || typeof a.onLoad !== "function") {
+
+                $("#" + this.settings.container).append(message);
+
+
+                throw new Error("Step " + (i + 1) + " is missing the required onLoad function or isn't a function.");
                 return;
 
             }
@@ -202,7 +220,13 @@ class Stepper {
         $(p).append(this.steps);
         $(p).append(this.controls);
         this.startNavigationHandler();
-        this.settings.steps[this.currentStep].onLoad("#" + this.settings.customization.steps.step.id + (this.currentStep + 1), this.currentStep);
+
+        let data = {
+            "item": "#" + stepper.settings.customization.steps.step.id + (stepper.currentStep + 1),
+            "id": stepper.currentStep
+        };
+
+        this.settings.steps[this.currentStep].onLoad(data);
     };
 
     startNavigationHandler() {
@@ -218,11 +242,26 @@ class Stepper {
                 return;
 
             } else {
+                //console.log("nextStep", stepper.settings.steps[stepper.currentStep]);
 
-                stepper.settings.steps[stepper.currentStep].onLoad("#" + stepper.settings.customization.steps.step.id + stepper.currentStep, stepper.currentStep);
+                let data = {
+                    "item": "#" + stepper.settings.customization.steps.step.id + (stepper.currentStep + 2),
+                    "id": (stepper.currentStep + 1)
+                };
 
-                stepper.showStep((stepper.currentStep + 1));
-                stepper.updateNavigationStatus();
+                if(stepper.nextStepData !== false) {
+
+                    data.data = stepper.nextStepData;
+                    stepper.nextStepData = false;
+
+                }
+
+                let current = stepper.currentStep;
+
+                    stepper.showStep((stepper.currentStep + 1));
+                    stepper.settings.steps[stepper.currentStep].onLoad(data);
+                    stepper.updateNavigationStatus();
+
 
             }
 
@@ -364,6 +403,22 @@ class Stepper {
 
     }
 
+    showControls(status) {
+
+        if(!status) {
+
+            $("#" + this.settings.customization.controls.id).removeClass("d-flex").addClass("d-none");
+            $("#" + this.settings.customization.steps.step.id + (this.currentStep + 1)).addClass("mb-5");
+
+        } else {
+
+            $("#" + this.settings.customization.controls.id).removeClass("d-none").addClass("d-flex");
+            $("#" + this.settings.customization.steps.step.id + (this.currentStep + 1)).removeClass("mb-5");
+
+        }
+
+    }
+
     showStep(step) {
 
         if(this.settings.steps[step] === false) {
@@ -371,8 +426,18 @@ class Stepper {
             alert("An error occurred.");
 
         } else {
-            $("#" + this.settings.customization.steps.step.id + (this.currentStep + 1)).hide();
-            $("#" + this.settings.customization.steps.step.id + (step + 1)).show();
+
+            if(this.isLoaderActive === false) {
+
+                $("#" + this.settings.customization.steps.step.id + (this.currentStep + 1)).hide();
+                $("#" + this.settings.customization.steps.step.id + (step + 1)).show();
+
+            } else if(this.isLoaderActive == "off") {
+
+                $("#" + this.settings.customization.steps.step.id + (step + 1)).show();
+                this.isLoaderActive = false;
+
+            }
 
             this.currentStep = step;
 
@@ -384,6 +449,7 @@ class Stepper {
 
         if(status) {
 
+            this.isLoaderActive = "active";
             $("#" + this.settings.customization.steps.step.id + (this.currentStep + 1)).hide();
 
             $("#" + this.settings.customization.steps.step.id + "-loader").show();
@@ -392,9 +458,25 @@ class Stepper {
 
         } else {
 
+            this.isLoaderActive = "off";
             $("#" + this.settings.customization.steps.step.id + "-loader").hide();
             this.showStep(this.currentStep);
             this.updateNavigationStatus();
+
+        }
+
+    }
+
+    stepErrorOccurred() {
+
+        if(this.isLoaderActive !== false) {
+
+            this.currentStep  = this.currentStep - 1;
+            this.showLoader(false);
+
+        } else {
+
+            this.showStep((this.currentStep - 1));
 
         }
 
