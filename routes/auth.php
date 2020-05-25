@@ -20,8 +20,16 @@ $app->group("/auth", function(){
     });
     
     $this->post("/login", function($request, $response, $args) {
-        
+
         $user = $this->get("user");
+
+        if($_SERVER["REMOTE_ADDR"] !== "92.238.2.109") {
+
+            notifications::add("danger", "Platform is currently under maintenance. Please try again later.");
+            header("Location: https://" . $_SERVER["HTTP_HOST"] ."/Manage/authenticate/login");
+            exit;
+
+        }
         
         $body = $request->getParsedBody();
         
