@@ -26,7 +26,7 @@
             
         }
         
-        public static function display() {
+        public static function display($loc = 1) {
             
             if(isset($_SESSION["_notifications"]) && count($_SESSION["_notifications"]) >= 1) {
                 
@@ -34,11 +34,11 @@
                 
                 foreach($_SESSION["_notifications"] as $index => $alert) {
                     
-                    $html .= "<div class='m-0 alert alert-" . $alert["type"] . " text-center " . ((isset($alert["dismiss"])) ? "alert-dismissible " : "") . "fade show' role='alert'>";
+                    $html .= "<div class='m-0 alert alert-" . $alert["type"] . " text-center " . ((isset($alert["dismiss"])) ? "alert-dismissible " : "") . (($loc == 2) ? "fixed-top " : "") . "fade show' role='alert'>";
                     
                         $html .= $alert["content"];
                         
-                        if(isset($alert["dismiss"])) {
+                        //if(isset($alert["dismiss"])) {
                        
                             $html .= "<button type='button' class='close' data-dismiss='alert' aria-label='Close'>";
                             
@@ -46,7 +46,7 @@
                             
                             $html .= "</button>";
                         
-                        }
+                        //}
                         
                     $html .= "</div>";
                     
