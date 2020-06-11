@@ -109,6 +109,14 @@ class cinema {
         return $data;
 
     }
+
+    public function getConfigItem($key) {
+
+        $query = $this->conn->query("SELECT * FROM gfc_config WHERE `key` = ?", $key);
+
+        return (($query->numRows() < 1) ? false : $query->fetchArray());
+
+    }
     
     public function createScreen($screenName, $status) {
         
@@ -455,6 +463,7 @@ class cinema {
         }
 
         // Build query
+        $columns[] = "social_distancing";
         $columns = implode(",", $required);
         $info = "'" . $data["date"] . "',";
         $info .= "" . $data["time"] . ",";
@@ -462,6 +471,8 @@ class cinema {
         $info .= "" . $data["screen_id"] . ",";
         $info .= "'" . $data["special_requirements"] . "',";
         $info .= "'" . $data["ticket_config"] . "'";
+        // Social Distancing
+        $info .= "" . (($this->getConfigItem("social_distancing")["value"] == 1) ? 1 : 0) . "";
 
         $r = $this->conn->query("INSERT INTO gfc_films_showtimes ($columns) VALUES ($info)");
 
@@ -642,7 +653,8 @@ class cinema {
             "booking_name",
             "booking_tickets_issued",
             "booking_method",
-            "booking_used" 
+            "booking_used",
+            "social_distancing"
         );
 
         $number = array(
@@ -652,6 +664,14 @@ class cinema {
             "booking_total",
             "booking_ts"
         );
+
+        // Social distancing (if active)
+        $socialDistancing = $this->conn->query("SELECT screen_id, social_distancing as 'v' FROM gfc_films_showtimes WHERE id = ?", $data["showtime_id"])->fetchArray();
+        if($socialDistancing["v"] == 1) {
+
+            $data["social_distancing"] = $this->seatingSocialDistancing($data["booking_seats"], $socialDistancing["screen_id"]);
+
+        }
 
         $columns = array();
         $values = array();
@@ -663,7 +683,7 @@ class cinema {
             
             if(in_array($column, $available)) {
 
-                if(in_array($column, array("booking_info", "booking_seats"))){
+                if(in_array($column, array("booking_info", "booking_seats", "social_distancing"))){
 
                     $val = "'" . json_encode($value) . "'";
 
@@ -1846,10 +1866,15 @@ class cinema {
         //die("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . "");
         // STEP 1 - Get all bookings that hold tickets for this showing
 
-        $result = $this->conn->query("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . ")", $details["showId"])->fetchAll();
+        $socialDistancing = (($details["social_distancing"] == 1) ? true : false);
+
+        $items = (($socialDistancing) ? "id, booking_seats, social_distancing" : "id, booking_seats");
+
+        $result = $this->conn->query("SELECT $items FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . ")", $details["showId"])->fetchAll();
 
         // STEP 2 - Combine all seat ids from the bookings
         $bookedSeats = array();
+        $blockedSeats = array();
 
         foreach($result as $index => $booking) {
 
@@ -1858,6 +1883,18 @@ class cinema {
             foreach($seats as $seat) {
 
                 $bookedSeats[] = $seat;
+
+            }
+
+            if($socialDistancing) {
+
+                $seats2 = json_decode($booking["social_distancing"], true);
+
+                foreach($seats2 as $seat2) {
+
+                    $blockedSeats[] = $seat2;
+
+                }
 
             }
 
@@ -1870,6 +1907,16 @@ class cinema {
         // STEP 4 - GET number of available seats for the show
 
         $availableSeats = (count($allSeats) - count($bookedSeats));
+        $saved = $availableSeats;
+
+        if($socialDistancing) {
+
+            $availableSeats = $availableSeats - count($blockedSeats);
+
+        }
+
+        //print "Original: " . $saved . " | NEW: " . $availableSeats;
+        //exit;
 
         // STEP 5 - Check that the number of available seats is higher than the required seats
 
@@ -1887,6 +1934,10 @@ class cinema {
             if(in_array($seat["id"], $bookedSeats)) {
 
                 $allSeats[$index]["status"] = "GREY";
+
+            } elseif($socialDistancing && in_array($seat["id"], $blockedSeats) && $seat["seat_type"] !== 99) {
+
+                $allSeats[$index]["status"] = "COVID";
 
             } else {
 
@@ -2031,7 +2082,7 @@ class cinema {
                     
                     }
                     
-                    $seatConfig = (($seat["status"] == "GREY") ? "seat-taken" : (($selectTicket) ? "seat-selected" : ""));
+                    $seatConfig = (($seat["status"] == "COVID") ? "seat-blocked" : (($seat["status"] == "GREY") ? "seat-taken" : (($selectTicket) ? "seat-selected" : "")));
 
                     // Start of seat
                     $html .= "<td class='screen-seat seat-" . $seatingSizes["$seat[seat_type]"] . " " . $seatConfig . "' data-seatId='" . cipher::encrypt($seat["id"]) . "' data-showId='" . cipher::encrypt($show) . "' data-seattype='" . (($seat["seat_type"] == "99") ? "space" : "seat") . "'>";
@@ -2041,7 +2092,7 @@ class cinema {
 
                         // Insert seat label
                         if(!in_array($seat["seat_type"], array("99"))) {
-                            $html .= $seat["seat_row_label"] . $seat["seat_number"];
+                            $html .= "<span>" . $seat["seat_row_label"] . $seat["seat_number"] . "</span>";
                         }
 
                     $html .= "</td>";
@@ -2078,6 +2129,222 @@ class cinema {
             "required" => $ticketsRequired);
 
     }
+
+    /**
+     * SeatingSocialDistancing
+     * This algorithm will work out which seats in the screen need to be blocked off around the users selected seats to maintain social distancing.
+     * @param $selection
+     * @param $screen
+     * @return array
+     */
+    public function seatingSocialDistancing($selection, $screen) {
+
+        // Step 1 - Get Get array positions for each seatId
+
+        $seats = implode(",", $selection);
+        $space = $this->getConfigItem("social_distancing_spacing")["value"];
+
+        // Queries
+        $result = $this->conn->query("SELECT id, seat_row as 'row', seat_number FROM gfc_screens_seats WHERE id IN($seats)")->fetchAll();
+        $screen = $this->conn->query("SELECT id, seat_row as 'row' FROM gfc_screens_seats WHERE screen_id = ?", $screen)->fetchAll();
+
+        // Step 2 - Sort the seats by their row number
+        $grouped = array();
+        $seatingPlan = array();
+
+        // Loop through each item and sort it into the right row
+        foreach ($result as $id => $item) {
+
+            // Checking the row exists in the group array
+            if (!isset($grouped[$item["row"]])) {
+
+                $grouped[$item["row"]] = array();
+
+            }
+
+            $grouped[$item["row"]][] = $item;
+
+        }
+
+        // Building seating plan
+        foreach ($screen as $id => $item) {
+
+            if (!isset($seatingPlan[$item["row"]])) {
+
+                $seatingPlan[$item["row"]] = array();
+
+            }
+
+            $seatingPlan[$item["row"]][] = $item["id"];
+
+        }
+
+
+        // Step 3 - Collect ids of seats in the vacinity of the selection
+        $blockedSeats = array();
+
+        // Start looping through the group array to go through each row
+        foreach ($grouped as $row => $items) {
+
+            foreach ($items as $id => $seat) {
+
+                // This seat is the seat to the right of the current selected seat.
+                $rightSeat = $seat["seat_number"];
+
+                // Left side counter
+                $l = 1;
+
+                // Check left side
+                while($l <= $space) {
+
+                    $stop = false;
+
+                    $leftSeat = (($seat["seat_number"] - 1) - $l);
+
+                    // Check seat to the left exists
+                    if ($seatingPlan[($seat["row"])][$leftSeat] !== null) {
+
+                        // If seat exists, check it isn't a selected seat
+                        if (!in_array($seatingPlan[($seat["row"])][$leftSeat], $selection)) {
+
+                            $blockedSeats[] = $seatingPlan[($seat["row"])][$leftSeat];
+
+                        } else {
+                            // Stopping loop as seat is a selected seat.
+                            $stop = true;
+                        }
+
+                        // Run this section if it is at the first iteration of the loop.
+                        if($l == 1) {
+
+                            // Check seat behind exists
+                            if ($seatingPlan[($seat["row"] - 1)][$leftSeat] !== null) {
+
+                                // If seat exists, check it isn't a selected seat
+                                if (!in_array($seatingPlan[($seat["row"] - 1)][$leftSeat], $selection)) {
+
+                                    $blockedSeats[] = $seatingPlan[($seat["row"] - 1)][$leftSeat];
+
+                                }
+
+                            }
+
+                            // Check seat behind exists
+                            if ($seatingPlan[($seat["row"] + 1)][$leftSeat] !== null) {
+
+                                // If seat exists, check it isn't a selected seat
+                                if (!in_array($seatingPlan[($seat["row"] + 1)][$leftSeat], $selection)) {
+
+                                    $blockedSeats[] = $seatingPlan[($seat["row"] + 1)][$leftSeat];
+
+                                }
+
+                            }
+
+                        }
+
+                        // Checking if the algorithm asked for the loop to stop. If so break out of the loop.
+                        if($stop === true) {
+
+                            break;
+
+                        }
+
+                    } else {
+
+                        // Stopping loop as no seat exists to the left
+                        break;
+
+                    }
+
+                    $l++;
+                }
+
+                // Rightside seat counter
+                $r = 1;
+
+                // Check right side
+                while($r <= $space) {
+
+                    $stop = false;
+
+                    $rightSeat = (($seat["seat_number"] - 1) + $r);
+
+                    // Check seat to the left exists
+                    if ($seatingPlan[($seat["row"])][$rightSeat] !== null) {
+
+                        // If seat exists, check it isn't a selected seat
+                        if (!in_array($seatingPlan[($seat["row"])][$rightSeat], $selection)) {
+
+                            $blockedSeats[] = $seatingPlan[$seat["row"]][$rightSeat];
+
+                        } else {
+
+                            // Stopping loop as seat is a selected seat.
+                            $stop = true;
+
+                        }
+
+                        // Run this section if its the first iteration of the loop.
+                        if($r == 1) {
+
+                            // Check seat behind exists
+                            if ($seatingPlan[($seat["row"] - 1)][$rightSeat] !== null) {
+
+                                // If seat exists, check it isn't a selected seat
+                                if (!in_array($seatingPlan[($seat["row"] - 1)][$rightSeat], $selection)) {
+
+                                    $blockedSeats[] = $seatingPlan[($seat["row"] - 1)][$rightSeat];
+
+                                }
+
+                            }
+
+                            // Check seat behind exists
+                            if ($seatingPlan[($seat["row"] + 1)][$rightSeat] !== null) {
+
+                                // If seat exists, check it isn't a selected seat
+                                if (!in_array($seatingPlan[($seat["row"] + 1)][$rightSeat], $selection)) {
+
+                                    $blockedSeats[] = $seatingPlan[($seat["row"] + 1)][$rightSeat];
+
+                                }
+
+                            }
+
+                        }
+
+                        // Checking if the algorithm has asked for the loop to be stopped. If so break out of the loop.
+                        if($stop === true) {
+
+                            break;
+
+                        }
+
+                    } else {
+
+                        // Stopping loop as no seat exists to the left
+                        break;
+
+                    }
+
+                    $r++;
+                }
+
+            }
+
+
+        }
+
+        // Removing duplicate seat ids
+        $blockedSeats = array_unique($blockedSeats);
+
+        // Sorting ids into numeric order
+        sort($blockedSeats);
+
+        // Return the ids that should be blocked to the caller.
+        return $blockedSeats;
+    }
     
     public function availableSeats($show) {
         
@@ -2091,14 +2358,19 @@ class cinema {
             "'GFC_ADMIN'",
             "'PAID'"
         ));
+
+        $item = "";
+        if($showInfo["social_distancing"] == 1) {
+            $item = ", SUM(social_distancing_total) as 'blocked'";
+        }
         
         // Get number of available taken seats for the show
-        $taken = $this->conn->query("SELECT SUM(booking_seats_total) AS 'taken' FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN($validStatuses)", $show)->fetchArray();
-        
-        $taken = $taken["taken"];
+        $taken = $this->conn->query("SELECT SUM(booking_seats_total) AS 'booked'$item FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN($validStatuses)", $show)->fetchArray();
+
+        $taken = (($showInfo["social_distancing"] == 1) ? ($taken["booked"] + $taken["blocked"]) : $taken["booked"]);
         
         // Get number of seats for the screen
-        $total = $this->conn->query("SELECT COUNT(id) AS 'total' FROM gfc_screens_seats WHERE screen_id = ?", $showInfo["screen_id"])->fetchArray();
+        $total = $this->conn->query("SELECT COUNT(id) AS 'total' FROM gfc_screens_seats WHERE screen_id = ? AND NOT seat_type = 99", $showInfo["screen_id"])->fetchArray();
         
         $total = $total["total"];
         

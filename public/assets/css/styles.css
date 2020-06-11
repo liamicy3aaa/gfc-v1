@@ -32,6 +32,10 @@
 }
 
 /*Form Wizard*/
+#stepperContainer {
+    transform: scale(0.9);
+
+}
 .stepwizard-step p {
     margin-top: 10px;
 }

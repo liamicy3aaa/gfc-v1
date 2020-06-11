@@ -80,7 +80,8 @@ $app->get('/', function (Request $request, Response $response, array $args) {
     return $response = $this->view->render($response, "whats-on.phtml", [
         "_title" => "What's-on",
         "films" => $films,
-        "banner" => $cinema->buildPromoBanner()
+        "banner" => $cinema->buildPromoBanner(),
+        "social_distancing" => (($cinema->getConfigItem("social_distancing")["value"] == 1) ? true : false)
     ]);
 
 });

@@ -1,5 +1,10 @@
 <?php print $data["banner"];?>
 <div id="whats-on-categories" class="container container-fluid">
+    <?php if($data["social_distancing"]) {?>
+
+    <div class="alert alert-info my-2 text-center">Social distancing is in effect for all current performances.</div>
+
+    <?php }?>
     <h1 class="mb-4">What's on</h1>
     <div id='mobileCateogries' class="row d-none d-sm-none">
         <div class='col-lg-4'>

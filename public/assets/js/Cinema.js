@@ -342,8 +342,6 @@ var Cinema = {
                 seatOnClick: function(selector, seatId) {
                 
                     if(selector.closest("td").hasClass("seat-taken")) {
-                    
-                    alert("Seat taken");
                     return;
                     
                     }

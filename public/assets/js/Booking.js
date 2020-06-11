@@ -302,10 +302,14 @@ var Booking = {
             seatOnClick: function(selector, seatId) {
 
                 if(selector.closest("td").hasClass("seat-taken")) {
-
-                    alert("Seat taken");
                     return;
 
+                }
+
+                if(selector.closest("td").hasClass("seat-blocked")) {
+
+                    alert("Due to social distancing, this seat is not available.");
+                    return;
                 }
 
                 let current = selector.closest("td").hasClass("seat-selected");

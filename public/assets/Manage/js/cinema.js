@@ -328,6 +328,12 @@ var Cinema = {
                 var show = selector.closest("td").attr("data-showid");
                 //alert("Show: " + show + " | Seat:" + seatId);
 
+                if(selector.closest("td").hasClass("seat-blocked")) {
+
+                    alert("Due to social distancing, this seat is not available for bookings.");
+                    return;
+                }
+
                 $.ajax({
                     url: "/Manage/ajax/films/" + config.filmId + "/showtimes/" + show + "/" + seatId + "",
                     method: "GET",
@@ -892,8 +898,12 @@ var Cinema = {
                                 seatOnClick: function(selector, seatId) {
 
                                     if($(selector).closest("td").hasClass("seat-taken")) {
+                                        return;
 
-                                        alert("SEAT TAKEN");
+                                    }
+
+                                    if($(selector).closest("td").hasClass("seat-blocked")) {
+                                        alert("Due to social distancing, this seat is not available.")
                                         return;
 
                                     }
