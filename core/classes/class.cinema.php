@@ -1517,8 +1517,16 @@ class cinema {
                 if(isset($config["proof"]) && $config["proof"] == 1) {
                     
                     $html .= "<div>";
-                        
+
+                    if($ticket["cea_free"] == 1) {
+
+                        $html .= "<span class='badge badge-primary'>CEA Card required</span>";
+
+                    } else {
+
                         $html .= "<small class='text-secondary'>Proof of entitlement may be required</small>";
+
+                    }
                             
                     $html .= "</div>";
                     

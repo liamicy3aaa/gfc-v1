@@ -41,9 +41,17 @@ var Booking = {
 
                         let data = TicketPicker.finish();
 
-                        stepper.showLoader(true);
-                        stepper.nextStepData = data;
-                        return true;
+                        console.log("RESULT", data);
+
+                            if(data.continue == false) {
+                                return false;
+                            } else {
+
+                                stepper.showLoader(true);
+                                stepper.nextStepData = data;
+                                return true;
+
+                            }
 
                     },
                     'onBack': function(){}
@@ -71,7 +79,9 @@ var Booking = {
                             }
 
                     },
-                    'onBack': function(){},
+                    'onBack': function(){
+                        TicketPicker.settings.cea_validation = false;
+                    },
                     'onLoad': function(data){
 
                         $.ajax({
@@ -98,8 +108,19 @@ var Booking = {
 
                                     let error = JSON.parse(err.responseText);
 
-                                    $("#step1Error").html(error.error_desc);
-                                    $("#step1Error").show();
+                                    switch(error.error) {
+
+                                        case "invalid_CEA_number":
+                                            TicketPicker.settings.cea_validation = false;
+                                            TicketPicker.startCEACheck();
+                                            break;
+
+                                        default:
+                                            $("#step1Error").html(error.error_desc);
+                                            $("#step1Error").show();
+                                            break;
+
+                                    }
 
                                 }
 

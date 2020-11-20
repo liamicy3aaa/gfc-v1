@@ -4,6 +4,57 @@ $app->group("/booking", function(){
 
     
     // AJAX CALLS FOR FRONTEND //
+
+    $this->post("/ajax/cea/validate", function($request, $response, $args){
+
+        $body = $request->getParsedBody();
+        $auth = $request->getCookieParam('CEAAUTH');
+
+
+        /*if(strlen($auth) < 1 || time() > cipher::decrypt($auth) || $auth !== $_SESSION["_CEAAUTH"]) {
+
+            return $response->withJson(array(
+                "error" => "unauthorised",
+                "error_desc" => "401 Unauthorised"
+            ), 401);
+
+        }*/
+
+        if(!isset($body["card"])) {
+
+            return $response->withJson(array(
+                "error" => "missing_data",
+                "error_desc" => "Card number missing from data."
+            ), 400);
+
+        } elseif(!ctype_alnum($body["card"])){
+
+            return $response->withJson(array(
+                "error" => "invalid_data",
+                "error_desc" => "Card number not a valid format.",
+            ), 400);
+
+        }
+
+        if($body["card"] == "111111111") {
+
+            $code = cipher::encrypt($body["card"]);
+            $_SESSION["_booking"]["CEA_VALIDATE"] = $code;
+
+            return $response->withJson(array(
+                "status" => "ACTIVE",
+                "token" => $code
+            ), 200);
+
+        } else {
+
+            return $response->withJson(array(
+                "status" => "EXPIRED"
+            ), 200);
+
+        }
+
+    });
     
     $this->post("/ajax/cancel/{bookingId}", function($request, $response, $args) {
         
@@ -80,7 +131,8 @@ $app->group("/booking", function(){
         $_SESSION["_booking"]["show"] = $showId;
         $_SESSION["_booking"]["tickets"] = array();
         $_SESSION["_booking"]["ticketCount"] = 0;
-        
+
+
         foreach($body["tickets"] as $id => $count) {
             
             $type = cipher::decrypt($id);
@@ -98,7 +150,39 @@ $app->group("/booking", function(){
             return $response->withJson(array("status"=>400, "error"=>"invalidTicketTotal", "error_desc"=>"At least one ticket must be selected."), 400);
             
         }
-        
+
+        //CEA CHECK
+        $isCEA = false;
+
+        //print "<pre>"; print_r($types); print "</pre>";
+        //exit;
+
+        foreach($types as $id => $type) {
+
+            // CEA
+            if($type["cea_free"] == 1 && $_SESSION["_booking"]["tickets"][$id] >= 1) {
+                $isCEA = true;
+                break;
+
+            }
+
+        }
+
+        if($isCEA) {
+
+            if(!isset($body["CEA_VALIDATE"]) || $body["CEA_VALIDATE"] !== $_SESSION["_booking"]["CEA_VALIDATE"]) {
+
+                return $response->withJson(array(
+                    "status"=>400,
+                    "error"=>"invalid_CEA_number",
+                    "error_desc"=>"Invalid CEA number provided."
+                ), 400);
+
+
+            }
+
+        }
+
         // Building seating plan with the show id and ticket count
         $seating = $cinema->buildSeatingPlan($showId, $_SESSION["_booking"]["ticketCount"]);
         
@@ -190,7 +274,9 @@ $app->group("/booking", function(){
             "booking_seats" => $seats,
             "booking_total" => $total,
             "booking_seats_total" => count($seats),
-            "booking_status" => "reserved_temp"
+            "booking_status" => "reserved_temp",
+            "booking_method" => "online",
+            "cea_card" => ((isset($_SESSION["_booking"]["CEA_VALIDATE"]) && $_SESSION["_booking"]["CEA_VALIDATE"] >= 1) ? cipher::decrypt($_SESSION["_booking"]["CEA_VALIDATE"]) : "")
         );
 
         $booking = $cinema->createBooking($data);
@@ -765,14 +851,17 @@ $app->group("/booking", function(){
         // Build ticket info array for Cinema JS Class
         $ticketInfo = $cinema->getTicketTypes($showInfo["ticket_config"]["types"]);
         $ticketConfig = array();
+        $x = 0;
 
         foreach($ticketInfo as $id => $ticket) {
 
             $ticketConfig[cipher::encrypt($ticket["id"])] = array(
                 "cost" => $ticket["ticket_cost"],
-                "count" => 0
+                "count" => 0,
+                "cea_free" => $ticket["cea_free"],
+                "cea_full" => $ticket["cea_full"]
             );
-
+        $x++;
         }
 
         // Getting number of available seats / tickets
@@ -813,6 +902,15 @@ $app->group("/booking", function(){
             $html .= "<div class='card-body'>";
                 $html .= "<strong><span id='selectedTicketsTotal'>2</span> tickets selected at a total cost of &pound;<span id='selectedTicketsCost'>14.00</span></strong>";
             $html .= "</div></div></div>";
+
+            //Creating CEA AUTH
+            $_SESSION["_CEAAUTH"] = cipher::encrypt(time()+900);
+            $token = $_SESSION["_CEAAUTH"];
+
+                $setcookies = new Slim\Http\Cookies();
+                $setcookies->set("CEAAUTH", ['value' => $token, 'expires' => time() + 900, 'path' => '/','domain' => "",'httponly' => true]);
+                $response = $response->withHeader('Set-Cookie', $setcookies->toHeaders());
+
 
         return $response = $this->view->render($response, "/booking/booking2.phtml", [
             "_title" => "New Booking",
