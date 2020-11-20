@@ -13,6 +13,7 @@
             let slice = str.split(':');
             let h = Number(slice[0]) * 60 * 60;
             let i = Number(slice[1]) * 60;
+
             return h + i;
         },
         /**
@@ -24,7 +25,23 @@
             let i1 = (val % 3600);
             let h = '' + Math.floor(val / 36000) + Math.floor((val / 3600) % 10);
             let i = '' + Math.floor(i1 / 600) + Math.floor((i1 / 60) % 10);
+            //return h + ':' + i;
+
+            return h;
+        },
+
+        /**
+         *
+         * @param {number} val
+         * @returns {string}
+         */
+        formatTimeClick: function (val) {
+            let i1 = (val % 3600);
+            let h = '' + Math.floor(val / 36000) + Math.floor((val / 3600) % 10);
+            let i = '' + Math.floor(i1 / 600) + Math.floor((i1 / 60) % 10);
+
             return h + ':' + i;
+
         },
 
         /**
@@ -543,7 +560,7 @@
                 html += '<div class="timeline"></div>';
                 let $timeline = $(html);
                 for (var t = saveData.tableStartTime; t < saveData.tableEndTime; t += setting.widthTime) {
-                    var $tl = $('<div class="tl"></div>');
+                    var $tl = $('<div class="tl" data-time="' +methods.formatTimeClick(t) + '"></div>');
                     $tl.outerWidth(setting.widthTimeX);
 
                     $tl.data('time', methods.formatTime(t));

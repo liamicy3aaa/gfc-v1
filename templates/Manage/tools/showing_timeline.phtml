@@ -40,7 +40,7 @@
 $("#schedule").timeSchedule({
   startTime: "00:00", // schedule start time(HH:ii)
   endTime: "23:59",   // schedule end time(HH:ii)
-  widthTime:60 * 5,  // cell timestamp example 10 minutes
+  widthTime:60 * 30,  // cell timestamp example 10 minutes
   timeLineY:60,       // height(px)
   verticalScrollbar:20,   // scrollbar (px)
   timeLineBorder:2,   // border(top and bottom)
@@ -48,6 +48,8 @@ $("#schedule").timeSchedule({
   draggable:false,
   resizable: false,
   onScheduleClick:function(node, time, timeline){
+
+      console.log(node);
     alert("time: " + time);  
   },
   onClick:function(node, data) {
