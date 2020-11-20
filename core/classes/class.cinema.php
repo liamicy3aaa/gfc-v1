@@ -572,12 +572,23 @@ class cinema {
     * @return array
     */
     public function getTicketInfo($ids, $onlyActive = true) {
+
+        $and = ((!is_string($ids)) ? "AND" : "");
+        $active = (($onlyActive) ? "$and ticket_status = 1" : "");
+
+        if(is_string($ids) && $ids == "*") {
+
+            $sqlEnd = (($onlyActive === true && is_string($ids)) ? "" : "WHERE $active");
+
+        } else {
+
+            $ids = implode(",", $ids);
+            $sqlEnd = "WHERE id IN($ids) $active";
+
+        }
         
-        $active = (($onlyActive) ? "AND ticket_status = 1" : "");
-        
-        $ids = implode(",", $ids);
-        
-        $r = $this->conn->query("SELECT * FROM gfc_ticket_types WHERE id IN($ids) $active")->fetchAll();
+
+        $r = $this->conn->query("SELECT * FROM gfc_ticket_types $sqlEnd")->fetchAll();
         
         $types = array();
         
