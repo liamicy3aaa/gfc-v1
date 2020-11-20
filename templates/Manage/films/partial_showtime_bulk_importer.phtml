@@ -1,0 +1,127 @@
+<div class="container container-fluid">
+    <h3 id="bulkImportHeading">Match headings to the correct columns</h3>
+    <form id="bulkImporter" action="#" method="POST">
+        <div class="row">
+            %HEADINGS%
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" checked="checked" name="firstColumn" class="custom-control-input" id="customSwitch1">
+                    <label class="custom-control-label text-center" for="customSwitch1">First column contains headings</label>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <button id="bulkSubmit" class="btn btn-block btn-outline-success">Next</button>
+        </div>
+    </form>
+    <hr/>
+    <div id="loader" class="d-none justify-content-center">
+        <div class="spinner-grow text-secondary" style="width: 5rem; height: 5rem;" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+    <div id="importSuccess" style="display:none;">
+        <div class='alert alert-success text-center h3'>#</div>
+        <br/>
+        <a class='mt-2 btn btn-primary' href='/Manage/films'>Go Home</a>
+    </div>
+    <div class="row importPreview border-light p-2" style="background-color:#f6f6f7; display:none;">
+        <div class="col" style="font-size:20px;">
+                <span class="badge badge-pill badge-primary">Showtimes to be added: <span id="importCount">#</span></span>
+            <span class="badge badge-pill badge-danger">Errors: <span id="importErrors">#</span></span>
+                <button id="importStart" class="btn btn-success float-right">Import</button> <button id="cancelImport" class="btn btn-danger float-right mr-1">Cancel</button>
+        </div>
+    </div>
+    <div class="row importPreview mt-2" style="display:none;">
+        <div id="importPreviewItems"  class="col">
+            none
+        </div>
+    </div>
+    <script>
+
+        $("#cancelImport").on("click", function(){
+
+            if(confirm("Are you sure you wish to cancel the import?") === true) {
+                $(".importPreview").slideUp();
+                $("#bulkImportHeading").html("Match headings to the correct columns");
+                $("#bulkImporter").slideDown();
+                $("#bulkSubmit").slideDown();
+                $("#importStart").removeAttr("disabled").removeClass("disabled");
+            }
+
+        });
+
+        $("#bulkImporter").on("submit", function(e){
+
+            e.preventDefault();
+
+            $("#bulkSubmit").slideUp();
+            $("#loader").removeClass("d-none").addClass("d-flex");
+            let data = $("#bulkImporter").serialize();
+
+            $.ajax({
+                url: "/Manage/films/showtime_bulk_columns",
+                method: "POST",
+                data: data,
+                success: function(res) {
+
+                    $("#bulkImportHeading").html("Bulk Import Preview");
+                    $("#importPreviewItems").html(res.items);
+                    $("#importCount").html(res.total);
+                    $("#importErrors").html(res.errors);
+                    if(res.errors >= 1) {
+
+                        $("#importStart").addClass("disabled").attr("disabled", "disabled");
+
+                    } else {
+
+                        $("#importStart").on("click", function(){
+
+                            $("#loader").removeClass("d-none").addClass("d-flex");
+                            $(".importPreview").slideUp();
+
+                            $.ajax({
+                                url: "/Manage/showtime_bulk_process",
+                                method: "POST",
+                                data: {"cmd":"process"},
+                                success: function(res) {
+                                    $("#importSuccess .alert").html(res.html);
+                                    $("#loader").removeClass("d-flex").addClass("d-none");
+                                    $("#importSuccess").show();
+                                    $("#bulkImportHeading").html("Bulk Import Complete.");
+
+                                    console.log("success", res);
+                                    console.log("Redirect would happen at this point.");
+                                },
+                                error: function(err) {
+                                    let res = JSON.parse(err.responseText);
+                                    $("#loader").removeClass("d-flex").addClass("d-none");
+                                    $(".importPreview").slideDown();
+                                    alert("An error occurred: " + res.error_desc);
+                                    console.log("Error", res);
+                                }
+                            });
+
+                        });
+
+                    }
+
+                    $("#loader").removeClass("d-flex").addClass("d-none");
+                    $(".importPreview").slideDown();
+                    $("#bulkImporter").slideUp();
+
+                },
+                error: function(err) {
+                    let res = JSON.Parse(err.responseText);
+
+                    alert(res.error + " | " + res.error_desc);
+                    console.log(res);
+                }
+
+            });
+        });
+    </script>
+
+</div>

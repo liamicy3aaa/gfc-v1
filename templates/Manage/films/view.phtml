@@ -3,7 +3,7 @@
     <!-- Page Heading -->
     <a href='/Manage/films' class="btn btn-info btn-sm mb-2"> < Back</a>
     <h1 class="h3 mb-0 text-gray-800"><?php print $data["_title"]; ?></h1>
-    <p class="mb-4">Below you will find information regarding this film.</p>
+    <p class="mb-4"><?php print ((isset($data["desc"])) ? $data["desc"] : "Below you will find information regarding this film.");?></p>
 
     <div class="card shadow mb-4">
         <div class="card-header">

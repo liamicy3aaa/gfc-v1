@@ -1,0 +1,54 @@
+<div class="container">
+    <div class="row pt-2">
+        <div class="col-12 col-md-7">
+            <h3>Upload CSV</h3>
+            <p>Please choose a CSV file using the selector below:</p>
+            <form id='importForm' class='mt-3' action='' method='post' accept-charset='utf-8' enctype='multipart/form-data'>
+                <div class="custom-file">
+                    <input id="importUpload" class="custom-file-input" type='file' name='files' accept=".csv" required onchange="updateFileName()">
+                    <label id="importUploadLabel" class="custom-file-label" for="importUpload">Choose CSV</label>
+                </div>
+                <br/><button id='importSubmit' class="mt-2 btn btn-outline-success btn-block" type='submit'><span id="btnText">Upload File</span><span id="loaderImport" style="display:none;"><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span> Uploading...</span></button>
+            </form>
+            <script>
+                function updateFileName() {
+                    let fileInput = $("#importUpload");
+                    $("#importUploadLabel").html(fileInput.val().split('\\').pop());
+                }
+
+                $("#importForm").on("submit", function(e){
+
+                    e.preventDefault();
+
+                    $("#btnText").hide();
+                    $("#loaderImport").show();
+                    $("#importSubmit").addClass("disabled").attr("disabled", "disabled");
+
+                    $("#importForm")[0].submit();
+
+                });
+            </script>
+        </div>
+        <div class="col-12 col-md-5 mt-4 mt-md-0">
+            <h3>Help</h3>
+            <p>The CSV file must contain the following:</p>
+            <ul class="list-group">
+                <li class="list-group-item">DATE<br/>
+                    <small><span class="font-weight-bold">Format:</span> String - DD/MM/YYYY</small>
+                </li>
+                <li class="list-group-item">TIME<br/>
+                    <small><span class="font-weight-bold">Format:</span> String - HH:MM</small>
+                </li>
+                <li class="list-group-item">SCREEN ID<br/>
+                    <small><span class="font-weight-bold">Format:</span> Integer - 1</small>
+                </li>
+                <li class="list-group-item">FILM ID<br/>
+                    <small><span class="font-weight-bold">Format:</span> Integer - 1</small>
+                </li>
+                <li class="list-group-item">TICKET ID<br/>
+                    <small><span class="font-weight-bold">Format:</span> Integer separated by a semi-colon - 1;2;3;4</small>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

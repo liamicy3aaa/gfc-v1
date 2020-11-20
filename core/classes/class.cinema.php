@@ -37,7 +37,7 @@ class cinema {
     public function buildPromoBanner() {
 
         // Step 1 - GET IDs of the films for films that have upcoming showings (Limit 4)
-        $films = $this->getShowtimes(false, true,4);
+        $films = $this->getShowtimes(false, true, 6);
 
         if($films === false) {
 
@@ -423,7 +423,7 @@ class cinema {
         // Checking data
 
         // #1 - date should just be numbers with dashes
-        $check = str_replace("-", "", $data["date"]);
+        $check = str_replace(array("-", "/"), "", $data["date"]);
 
         if(!ctype_digit($check)) {
 
@@ -502,6 +502,18 @@ class cinema {
         return $film;    
         
     }
+
+    public function filmExists($id = false){
+
+        if(!$id) {
+            return false;
+        }
+
+        $film = $this->conn->query("SELECT id FROM gfc_films WHERE id = ?", $id)->numRows();
+
+        return (($film == 1) ? true : false);
+
+    }
     
     /**
     * Get data for either particular films or all active films on the system.
@@ -562,6 +574,70 @@ class cinema {
         return $types;
         
     }
+
+    public function getFilmInfo($ids, $onlyActive = true) {
+
+        $and = ((!is_string($ids)) ? "AND" : "");
+        $active = (($onlyActive) ? "$and film_status = 1" : "");
+
+        if(is_string($ids) && $ids == "*") {
+
+            $sqlEnd = (($onlyActive === true && is_string($ids)) ? "" : "WHERE $active");
+
+        } else {
+
+            $ids = implode(",", $ids);
+            $sqlEnd = "WHERE id IN($ids) $active";
+
+        }
+
+
+        $r = $this->conn->query("SELECT * FROM gfc_films $sqlEnd")->fetchAll();
+
+        $types = array();
+
+        foreach($r as $index => $type) {
+
+            $types[$type["id"]] = $type;
+
+        }
+
+        return $types;
+
+    }
+
+    public function getScreenInfo($ids, $onlyActive = true) {
+
+        $and = ((!is_string($ids)) ? "AND" : "");
+        $active = (($onlyActive) ? "$and status = 1" : "");
+
+        if(is_string($ids) && $ids == "*") {
+
+            $sqlEnd = (($onlyActive === true && is_string($ids)) ? "" : "WHERE $active");
+
+        } else {
+
+            $ids = implode(",", $ids);
+            $sqlEnd = "WHERE id IN($ids) $active";
+
+        }
+
+
+        $r = $this->conn->query("SELECT * FROM gfc_screens $sqlEnd")->fetchAll();
+
+        $types = array();
+
+        foreach($r as $index => $type) {
+
+            $types[$type["id"]] = $type;
+
+        }
+
+        return $types;
+
+    }
+
+
 
 
     public function getTicketInfoByBooking($id) {
@@ -1097,8 +1173,8 @@ class cinema {
             
         }
     }
-    
-    public function getShowtimes($id = false, $onlyActive = false, $limit = false) {
+
+    public function getShowtimes($id = false, $onlyActive = false, $limit = false, $unique = false) {
 
         $time = time();
         $limit = (($limit !== false) ? " LIMIT $limit" : "");

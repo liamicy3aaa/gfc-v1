@@ -1554,5 +1554,300 @@ $app->group("/Manage", function(){
         
     });
 
+    $this->map(['GET', 'POST'],"/tools/bulkImporter", function($request, $response, $args){
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        if(file_exists($_FILES["files"]["tmp_name"]) && is_uploaded_file($_FILES["files"]["tmp_name"])) {
+            $files = $this->get("files");
+            $file = $_FILES["files"]["tmp_name"];
+
+
+            try {
+
+                if($_FILES["files"]["size"] > 2000000) {
+                    throw new Exception("File to large. Please upload a smaller csv. ");
+                }
+
+                $test = $files->validateFileType($file, array("text/csv", "text/plain"));
+
+                if($test !== true) {
+
+                    throw new  Exception("An error occurred validating the file.");
+
+                }
+
+                $fh = fopen($file, 'r+');
+
+                $lines = array();
+                while( ($row = fgetcsv($fh, 8192)) !== FALSE ) {
+                    if($row[0] !== "" && $row[1] !== "") {
+                        $lines[] = $row;
+                    }
+                }
+
+                $_SESSION["csvData"] = $lines;
+                //print "<pre>"; print_r($lines[0]); print "</pre>";
+                //exit;
+
+                $headings = "";
+                $required = array(
+                    "date" => "Date",
+                    "time" => "Time",
+                    "screen_id" => "Screen Id",
+                    "film_id" => "Film Id",
+                    "ticket_id" => "Ticket Ids"
+                );
+
+                foreach($required as $column => $heading) {
+
+                    $headings .= "<div class='col-2'>";
+                        $headings .= "<div class='form-group'>";
+                            $headings .= "<label for='" . $column . "'>$heading</label>";
+                            $headings .= "<select name='" . $column . "' class='form-control' id='" . $column . "'>";
+
+                            foreach($lines[0] as $id => $item) {
+
+                                $headings .= "<option value='$id'>$item</option>";
+
+                            }
+
+                            $headings .= "</select>";
+                        $headings .= "</div>";
+                    $headings .= "</div>";
+
+                }
+
+                $html = str_replace(array(
+                    "%HEADINGS%"
+                ),
+                    array(
+                    $headings
+                    ),
+                    file_get_contents("../templates/Manage/films/partial_showtime_bulk_importer.phtml"));
+
+                $returnObj = array(
+                    "_title" => "Bulk Importer",
+                    "_user" => $_SESSION["user"],
+                    "_page" => "films",
+                    "html" => $html
+                );
+
+                return $this->manageView->render($response, "/films/view.phtml", $returnObj);
+
+            } catch (Exception $e) {
+
+                print $e->getMessage();
+
+            }
+
+            return $response;
+
+        } else {
+
+            $html = file_get_contents("../templates/Manage/tools/partials/partial_showtime_bulk_upload.phtml");
+
+
+            $returnObj = array(
+                "_title" => "Bulk Importer",
+                "_user" => $_SESSION["user"],
+                "_page" => "films",
+                "html" => $html,
+                "desc" => "Add showtimes to the system from a csv."
+            );
+
+            return $this->manageView->render($response, "/films/view.phtml", $returnObj);
+        }
+
+
+        //$response->getBody()->write("DONE");
+    });
+
+    $this->post("/films/showtime_bulk_columns", function($request, $response, $args){
+
+        $user = $this->get("user");
+        $cinema = $this->get("cinema");
+        $user->loginRequired();
+        $body = $request->getParsedBody();
+        $required = array("date", "time", "screen_id", "ticket_id", "film_id");
+
+        foreach($required as $item) {
+            if(!isset($body[$item])) {
+                return $response->withJson(array(
+                    "error" => "missing_field",
+                    "error_desc" => "$item missing from request."
+                ), 400);
+            }
+        }
+
+        $positions = array();
+
+        $positions["date"] = $body["date"];
+        $positions["time"] = $body["time"];
+        $positions["screen_id"] = $body["screen_id"];
+        $positions["ticket_id"] = $body["ticket_id"];
+        $positions["film_id"] = $body["film_id"];
+
+        $csv = $_SESSION["csvData"];
+
+        if(isset($body["firstColumn"])) {
+            unset($csv[0]);
+        }
+
+        $data = array();
+        $filmIds = array();
+        $screenIds = array();
+        $errors = array();
+
+        foreach($csv as $id => $showing) {
+
+            // Validate date object
+            if(!validate::date($showing[$positions["date"]], "DD/MM/YYYY")){
+                $errors[$id][] = "invalid_date";
+            }
+
+            // Validate time
+            if(!validate::time($showing[$positions["time"]])) {
+                $errors[$id][] = "invalid_time";
+            }
+
+            // Validate Screen id
+            if(!validate::numeric($showing[$positions["screen_id"]]) || !$cinema->screenExists($showing[$positions["screen_id"]])) {
+                $errors[$id][] = "invalid_screenId";
+            }
+
+            // Validate film id
+            if(!validate::numeric($showing[$positions["film_id"]]) || !$cinema->filmExists($showing[$positions["film_id"]])) {
+                $errors[$id][] = "invalid_filmId";
+            }
+
+
+
+
+
+            $data[] = array(
+                "id" => $id,
+                "date" => $showing[$positions["date"]],
+                "time" => $showing[$positions["time"]],
+                "screen_id" => $showing[$positions["screen_id"]],
+                "film_id" => $showing[$positions["film_id"]],
+                "ticket_id" => array_filter(explode(";", $showing[$positions["ticket_id"]]))
+            );
+
+            if(!in_array($showing[$positions["film_id"]], $filmIds)) {
+                $filmIds[] = $showing[$positions["film_id"]];
+            }
+
+            if(!in_array($showing[$positions["screen_id"]], $screenIds)) {
+                $screenIds[] = str_replace(" ", "", $showing[$positions["screen_id"]]);
+            }
+
+        }
+
+        $_SESSION["bulkImport"] = $data;
+
+        $ticketInfo = $cinema->getTicketInfo("*");
+        $screenInfo = $cinema->getScreenInfo($screenIds);
+        $filmInfo = $cinema->getFilmInfo($filmIds);
+        $html = "";
+
+        foreach($data as $showing) {
+            $tickets = array();
+            foreach($showing["ticket_id"] as $ticket) {
+                if(!isset($ticketInfo[$ticket])) {
+                    $errors[$showing["id"]][] = "invalid_ticketId";
+                } else {
+                    $tickets[] = $ticketInfo[$ticket]["ticket_label"];
+                }
+            }
+
+
+            $errorClass = ((count($errors[$showing["id"]]) >= 1) ? "bg-danger text-white" : "");
+            $errorMessage = ((count($errors[$showing["id"]]) >= 1) ? "<br/><span class='font-weight-bold'>Errors</span>: " . implode(", ", $errors[$showing["id"]]) : "");
+
+            $html .= '<div class="MP-item list-group-item list-group-item-action my-1 ' . $errorClass . '">';
+            $html .= '<div class="d-flex w-100 py-1">';
+            $html .= '<div class="col-8">';
+            $html .= '<h5 class="mb-1">Date: ' . $showing["date"] . ' Time: ' . $showing["time"] . '</h5>';
+            $html .= '<small class="mb-1"><span class="font-weight-bold">Film:</span> ' . $filmInfo[$showing["film_id"]]["film_name"] . '<br/><span class="font-weight-bold">Tickets:</span> ' . implode(", ", $tickets) . '</small>';
+            $html .= '</div>';
+            $html .= '<div class="col-4 justify-content-inbetween text-right">';
+            $html .= '<small>Screen ' . $screenInfo[$showing["screen_id"]]["screen_name"] . $errorMessage . '</small>';
+            $html .= '</div>';
+            $html .= '</div>';
+            $html .= '</div>';
+
+        }
+
+        return $response->withJson(array(
+            "items" => $html,
+            "total" => count($data),
+            "errors" => (count($errors, COUNT_RECURSIVE) - count($errors))
+        ),200);
+
+        //print $html;
+        //print "<pre>"; print_r($data); print "</pre>";
+        exit;
+
+
+    });
+
+    $this->post("/showtime_bulk_process", function($request, $response, $args){
+
+        $user = $this->get("user");
+        $cinema = $this->get("cinema");
+
+         $user->loginRequired();
+         $body = $request->getParsedBody();
+
+        if(!isset($body["cmd"]) || $body["cmd"] !== "process") {
+
+            return $response->withJson(array(
+                "error" => "invalid_cmd",
+                "error_desc" => "Invalid command provided."
+            ), 400);
+
+        }
+
+         $data = $_SESSION["bulkImport"];
+
+        foreach($data as $id => $show) {
+
+            try {
+                $required = array(
+                    "date" => str_replace("/", "-", $show["date"]),
+                    "time" => strtotime(str_replace("/", "-", $show["date"]) . " " . $show["time"]),
+                    "film_id" => $show["film_id"],
+                    "screen_id" => $show["screen_id"],
+                    "special_requirements" => "",
+                    "ticket_config" => json_encode(array("types" => $show["ticket_id"]))
+                );
+
+                $process = $cinema->addShowing($required);
+
+                if(!$process["status"]) {
+
+                    return $response->withJson(array(
+                        "showId" => $id,
+                        "error" => $process["error"],
+                        "error_desc" => $process["error_desc"]
+                    ),400);
+
+                }
+
+            } catch(Exception $e) {
+
+                print $e->getMessage();
+                exit;
+            }
+
+        }
+
+        unset($_SESSION["bulkImport"]);
+
+        return $response->withJson(array("html"=>count($data). " shows processed and added."),200);
+    });
+
 
 });
