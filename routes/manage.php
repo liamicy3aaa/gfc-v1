@@ -731,6 +731,8 @@ $app->group("/Manage", function(){
         $data["film_id"] = cipher::decrypt($args["id"]);
         $data["special_requirements"] = ((strlen($params["requirements"]) < 1) ? " " : $params["requirements"]);
 
+        // Social Distancing
+        $data["social_distancing"] = (($cinema->getConfigItem("social_distancing")["value"] == 1) ? 1 : 0);
 
         // Data is fine so insert into database
         $r = $cinema->addShowing($data);
@@ -2004,5 +2006,217 @@ $app->group("/Manage", function(){
         return $response->withJson(array("html"=>count($data). " shows processed and added."),200);
     });
 
+    $this->get("/algotest", function($request, $response, $args){
 
-});
+        function seatBlocker($selection, $seatingPlan, $space)
+        {
+
+            // Step 1 - Get Get array positions for each seatId
+            $result1 = array(
+                array("id" => 17, "row" => 2, "seat_number" => 7),
+                array("id" => 18, "row" => 2, "seat_number" => 8),
+                array("id" => 19, "row" => 2, "seat_number" => 9)
+            );
+
+            $result = array(
+                array("id" => 13, "row" => 2, "seat_number" => 3),
+                array("id" => 14, "row" => 2, "seat_number" => 4),
+                array("id" => 15, "row" => 2, "seat_number" => 5),
+                array("id" => 23, "row" => 3, "seat_number" => 3),
+                array("id" => 24, "row" => 3, "seat_number" => 4)
+            );
+
+
+
+
+            // Step 2 - Sort the seats by their row number
+            $grouped = array();
+
+            foreach ($result as $id => $item) {
+
+                if (!isset($grouped[$item["row"]])) {
+
+                    $grouped[$item["row"]] = array();
+
+                }
+
+                $grouped[$item["row"]][] = $item;
+
+            }
+
+            // Step 3 - Collect ids of seats in the vacinity of the selection
+            $blockedSeats = array();
+
+            foreach ($grouped as $row => $items) {
+
+                foreach ($items as $id => $seat) {
+
+                    $rightSeat = $seat["seat_number"];
+
+                    $l = 1;
+
+                    // Check left side
+                    while($l <= $space) {
+
+                        $stop = false;
+
+                        $leftSeat = (($seat["seat_number"] - 1) - $l);
+                        //die(var_dump($leftSeat));
+
+                        // Check seat to the left exists
+                        if ($seatingPlan[($seat["row"])][$leftSeat] !== null) {
+
+                            // If seat exists, check it isn't a selected seat
+                            if (!in_array($seatingPlan[($seat["row"])][$leftSeat], $selection)) {
+
+                                $blockedSeats[] = $seatingPlan[($seat["row"])][$leftSeat];
+
+                            } else {
+                                //die("FAILED CHECK: ". $seatingPlan[($seat["row"])][$leftSeat]);
+                                // Stopping loop as seat is a selected seat.
+                                $stop = true;
+
+                            }
+
+                            if($l == 1) {
+
+                                // Check seat behind exists
+                                if ($seatingPlan[($seat["row"] - 1)][$leftSeat] !== null) {
+
+                                    // If seat exists, check it isn't a selected seat
+                                    if (!in_array($seatingPlan[($seat["row"] - 1)][$leftSeat], $selection)) {
+
+                                        $blockedSeats[] = $seatingPlan[($seat["row"] - 1)][$leftSeat];
+
+                                    }
+
+                                }
+
+                                // Check seat behind exists
+                                if ($seatingPlan[($seat["row"] + 1)][$leftSeat] !== null) {
+
+                                    // If seat exists, check it isn't a selected seat
+                                    if (!in_array($seatingPlan[($seat["row"] + 1)][$leftSeat], $selection)) {
+
+                                        $blockedSeats[] = $seatingPlan[($seat["row"] + 1)][$leftSeat];
+
+                                    }
+
+                                }
+
+                            }
+
+
+                            if($stop === true) {
+
+                                break;
+
+                            }
+
+                        } else {
+
+                            // Stopping loop as no seat exists to the left
+                            break;
+
+                        }
+
+                        $l++;
+                    }
+
+                    $r = 1;
+                    // Check right side
+                    while($r <= $space) {
+
+                        $stop = false;
+
+                        $rightSeat = (($seat["seat_number"] - 1) + $r);
+                        //die(var_dump($leftSeat));
+
+                        // Check seat to the left exists
+                        if ($seatingPlan[($seat["row"])][$rightSeat] !== null) {
+
+                            // If seat exists, check it isn't a selected seat
+                            if (!in_array($seatingPlan[($seat["row"])][$rightSeat], $selection)) {
+
+                                $blockedSeats[] = $seatingPlan[$seat["row"]][$rightSeat];
+
+                            } else {
+                                //die("FAILED CHECK: ". $seatingPlan[($seat["row"])][$leftSeat]);
+                                // Stopping loop as seat is a selected seat.
+                                $stop = true;
+
+                            }
+
+                            if($r == 1) {
+
+                                // Check seat behind exists
+                                if ($seatingPlan[($seat["row"] - 1)][$rightSeat] !== null) {
+
+                                    // If seat exists, check it isn't a selected seat
+                                    if (!in_array($seatingPlan[($seat["row"] - 1)][$rightSeat], $selection)) {
+
+                                        $blockedSeats[] = $seatingPlan[($seat["row"] - 1)][$rightSeat];
+
+                                    }
+
+                                }
+
+                                // Check seat behind exists
+                                if ($seatingPlan[($seat["row"] + 1)][$rightSeat] !== null) {
+
+                                    // If seat exists, check it isn't a selected seat
+                                    if (!in_array($seatingPlan[($seat["row"] + 1)][$rightSeat], $selection)) {
+
+                                        $blockedSeats[] = $seatingPlan[($seat["row"] + 1)][$rightSeat];
+
+                                    }
+
+                                }
+
+                            }
+
+                            if($stop === true) {
+
+                             break;
+
+                            }
+
+                        } else {
+
+                            // Stopping loop as no seat exists to the left
+                            break;
+
+                        }
+
+                        $r++;
+                    }
+
+                }
+
+
+            }
+            $blockedSeats = array_unique($blockedSeats);
+            sort($blockedSeats);
+            print "<pre>"; print_r($blockedSeats); print "</pre>";
+            exit;
+
+        }
+
+
+        $userSelection1 = array(732,733);
+        $userSelection2 = array(13, 14, 15, 23, 24);
+
+        $spacer = 2;
+
+        $cinema = $this->get("cinema");
+        $screen = 23;
+
+        return $response->withJson($cinema->seatingSocialDistancing($userSelection1, $screen, $spacer), 200);
+
+       //print $cinema->getConfigItem("social_distancing")["value"];
+
+    });
+
+
+
+    });

@@ -479,14 +479,14 @@ class cinema {
         }
 
         // Build query
-        $columns[] = "social_distancing";
         $columns = implode(",", $required);
+        $columns .= ",social_distancing";
         $info = "'" . $data["date"] . "',";
         $info .= "" . $data["time"] . ",";
         $info .= "" . $data["film_id"] . ",";
         $info .= "" . $data["screen_id"] . ",";
         $info .= "'" . $data["special_requirements"] . "',";
-        $info .= "'" . $data["ticket_config"] . "'";
+        $info .= "'" . $data["ticket_config"] . "',";
         // Social Distancing
         $info .= "" . (($this->getConfigItem("social_distancing")["value"] == 1) ? 1 : 0) . "";
 
@@ -723,6 +723,7 @@ class cinema {
         }
              
     }
+
     
     /**
     * Create a booking
@@ -746,7 +747,8 @@ class cinema {
             "booking_tickets_issued",
             "booking_method",
             "booking_used",
-            "social_distancing"
+            "social_distancing",
+            "cea_card"
         );
 
         $number = array(
@@ -919,7 +921,9 @@ class cinema {
             "booking_tickets_issued",
             "booking_method",
             "booking_used",
-            "booking_phone" 
+            "booking_phone",
+            "social_distancing",
+            "cea_card"
         );
 
         $number = array(
@@ -938,7 +942,7 @@ class cinema {
             
             if(in_array($column, $available)) {
 
-                if(in_array($column, array("booking_info", "booking_seats"))){
+                if(in_array($column, array("booking_info", "booking_seats","social_distancing"))){
 
                     $val = "'" . json_encode($value) . "'";
 
@@ -2298,6 +2302,67 @@ class cinema {
 
     }
 
+    public function updateDistancingStatus($cmd = "showing") {
+
+        $status = $this->getConfigItem("social_distancing")["value"];
+
+        // Get all showings that are for the future
+        $showings = $this->getShowtimes();
+        $ids = array();
+
+        unset($showings["_films"]);
+        foreach($showings as $film => $shows) {
+
+            foreach($shows as $id => $show) {
+
+                $ids[] = $show["id"];
+
+            }
+
+        }
+
+        $param = implode(",", $ids);
+
+        if($cmd == "showing") {
+
+            $update = $this->conn->query("UPDATE gfc_films_showtimes SET social_distancing = ? WHERE id IN ($param)", $status)->affectedRows();
+
+            if ($update >= 1) {
+
+                return true;
+
+            } else {
+
+                return false;
+
+            }
+        } elseif($cmd == "booking") {
+
+            //$distance = $this->getConfigItem("social_distancing_spacing_")["value"];
+
+            $bookings = $this->conn->query("SELECT a.id as 'id', a.booking_seats as 'seats', b.screen_id as 'screen', a.booking_reference FROM gfc_bookings as a INNER JOIN gfc_films_showtimes as b ON a.showtime_id = b.id WHERE showtime_id IN ($param) AND NOT a.booking_status IN('cancelled', 'pending')")->fetchAll();
+
+            foreach($bookings as $id => $booking) {
+
+                $selection = json_decode($booking["seats"], true);
+                $distancing = $this->seatingSocialDistancing($selection, $booking["screen"]);
+
+                $update = $this->updateBooking($booking["booking_reference"], array(
+                    "social_distancing" => $distancing
+                ));
+
+            }
+
+            return true;
+
+        } else {
+
+            return false;
+
+        }
+
+    }
+
     /**
      * SeatingSocialDistancing
      * This algorithm will work out which seats in the screen need to be blocked off around the users selected seats to maintain social distancing.
@@ -2310,7 +2375,9 @@ class cinema {
         // Step 1 - Get Get array positions for each seatId
 
         $seats = implode(",", $selection);
-        $space = $this->getConfigItem("social_distancing_spacing")["value"];
+        $spaceV = $this->getConfigItem("social_distancing_spacing_vertical")["value"];
+        $spaceH = $this->getConfigItem("social_distancing_spacing_horizontal")["value"];
+        $spaceD = $this->getConfigItem("social_distancing_spacing_diagonal")["value"];
 
         // Queries
         $result = $this->conn->query("SELECT id, seat_row as 'row', seat_number FROM gfc_screens_seats WHERE id IN($seats)")->fetchAll();
@@ -2363,7 +2430,7 @@ class cinema {
                 $l = 1;
 
                 // Check left side
-                while($l <= $space) {
+                while($l <= $spaceH) {
 
                     $stop = false;
 
@@ -2383,7 +2450,7 @@ class cinema {
                         }
 
                         // Run this section if it is at the first iteration of the loop.
-                        if($l == 1) {
+                        if($l == 1  && $spaceD == 1) {
 
                             // Check seat behind exists
                             if ($seatingPlan[($seat["row"] - 1)][$leftSeat] !== null) {
@@ -2397,7 +2464,7 @@ class cinema {
 
                             }
 
-                            // Check seat behind exists
+                            // Check seat infront exists
                             if ($seatingPlan[($seat["row"] + 1)][$leftSeat] !== null) {
 
                                 // If seat exists, check it isn't a selected seat
@@ -2432,7 +2499,7 @@ class cinema {
                 $r = 1;
 
                 // Check right side
-                while($r <= $space) {
+                while($r <= $spaceH) {
 
                     $stop = false;
 
@@ -2454,7 +2521,7 @@ class cinema {
                         }
 
                         // Run this section if its the first iteration of the loop.
-                        if($r == 1) {
+                        if($r == 1 && $spaceD == 1) {
 
                             // Check seat behind exists
                             if ($seatingPlan[($seat["row"] - 1)][$rightSeat] !== null) {
