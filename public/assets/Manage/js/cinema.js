@@ -242,7 +242,7 @@ var Cinema = {
     addScreenRows: function(screenId) {
 
         $.ajax({
-            url: "/Manage/ajax/screens/addRows",
+            url: "/Manage/ajax/screens/" + screenId + "/addRows",
             method: "GET",
             success: function (result) {
 

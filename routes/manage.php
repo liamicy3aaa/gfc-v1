@@ -1548,6 +1548,21 @@ $app->group("/Manage", function(){
 
     /** ## TICKET POS ## */
 
+    $this->get("/tools/v2/ticketPOS", function($request, $response, $args){
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        $returnObj = array(
+            "_title" => "TICKET POS",
+            "_user" => $_SESSION["user"],
+            "_page" => "TICKET POS"
+        );
+
+        return $this->manageView->render($response, "/tools/ticket_scanning.phtml", $returnObj);
+
+    });
+
     $this->get("/tools/ticketPOS", function($request,$response,$args){
 
         $user = $this->get("user");

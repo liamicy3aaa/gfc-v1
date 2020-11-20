@@ -1,0 +1,102 @@
+<div class="container">
+    <div class="row">
+        <div id="scanTickets" style="cursor:pointer;" class="col-12 bg-danger text-center text-white p-5 rounded m-1">
+            Scan tickets
+        </div>
+        <div class="col-12 bg-info text-center p-5 text-white rounded m-1">
+            Enter Booking Reference
+        </div>
+    </div>
+</div>
+<script src="/assets/Manage/js/html5-qrcode.min.js"></script>
+<script>
+    $("#scanTickets").on("click", function(){
+
+        showModal("Scan Tickets", "<div class='mx-auto' style=\"width:100%; height:auto; max-width: 500px\" id=\"reader\"></div>", {vcenter:true, size:"lg"});
+
+
+
+        function onScanSuccess(qrCodeMessage) {
+            // handle on success condition with the decoded message
+            alert(qrCodeMessage);
+        }
+
+
+        Html5Qrcode.getCameras().then(cameras => {
+            /**
+             * devices would be an array of objects of type:
+             * { id: "id", label: "label" }
+             */
+            if (cameras && cameras.length) {
+                var cameraId;
+
+                    let isMobile = window.matchMedia("only screen and (max-width: 760px)").matches;
+
+                    if (isMobile) {
+                        cameraId = cameras[1].id;
+                    } else {
+                        cameraId = cameras[0].id;
+                    }
+
+
+
+                const html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start(
+                    cameraId, // retreived in the previous step.
+                    {
+                        fps: 10,    // sets the framerate to 10 frame per second
+                        qrbox: 250  // sets only 250 X 250 region of viewfinder to
+                                    // scannable, rest shaded.
+                    },
+                    qrCodeMessage => {
+                        // do something when code is read. For example:
+                        html5QrCode.stop();
+                        updateModal(`Getting booking info....`);
+                        $.ajax({
+                            url: "/Manage/ajax/tools/ticketPOS/search",
+                            method: "POST",
+                            data: {booking_ref: `${qrCodeMessage}`},
+                            success: function(res) {
+
+                                updateModal("<h3>" + res.code + "</h3><pre>" + res.html + "</pre>");
+
+                            },
+                            error: function(err) {
+
+                                alert(JSON.parse(err.responseText));
+                                html5QrCode.start();
+
+                                //updateModal("<pre>" + JSON.parse(err.responseText) + "</pre>");
+
+                            }
+                        });
+
+                    },
+                    errorMessage => {
+                        // parse error, ideally ignore it. For example:
+                    })
+                    .catch(err => {
+                        // Start failed, handle it. For example,
+                        console.log(`Unable to start scanning, error: ${err}`);
+                    });
+
+                $("#dynamicModal").on('hide.bs.modal', function () {
+                    console.log("Cancelled camera event");
+                    html5QrCode.stop();
+                });
+
+
+            }
+
+        }).catch(err => {
+            alert("ERROR OCCURRED: " + err);
+            console.log("ERROR", err);
+        });
+
+
+        /*var html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);*/
+
+    });
+</script>
