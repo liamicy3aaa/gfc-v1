@@ -24,6 +24,20 @@ class payments {
 
 
     }
+	
+	public function _test() {
+		
+		error_reporting(E_ALL);
+		\Stripe\Stripe::setApiKey($this->PRIVATE_KEY);
+		try {
+		  \Stripe\Charge::all();
+		  echo "TLS 1.2 supported, no action required.";
+		} catch (Exception $e) {
+		  echo "TLS 1.2 is not supported. You will need to upgrade your integration.";
+		}
+		print "<br/>END";
+		exit;
+	}
 
     public function transactionExistsByBooking($bookingId) {
 
