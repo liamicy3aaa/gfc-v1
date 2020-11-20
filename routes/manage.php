@@ -597,12 +597,14 @@ $app->group("/Manage", function(){
         
     });
 
-    $this->get("/ajax/screens/addRows", function($request, $response, $args){
+    $this->get("/ajax/screens/{id}/addRows", function($request, $response, $args){
 
         $user = $this->get("user");
 
         $user->loginRequired();
         $cinema = $this->get("cinema");
+
+        $screenId = cipher::decrypt($args["id"]);
         
         //Check screen exists
         if(!$cinema->screenExists($screenId)) {
@@ -812,7 +814,7 @@ $app->group("/Manage", function(){
                 break;
 
             case "none":
-                $refund = array("status" => false);
+                $refund = array("status" => true);
                 break;
 
             default:
