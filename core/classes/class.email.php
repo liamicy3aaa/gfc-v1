@@ -144,6 +144,37 @@ class email {
 
     }
 
+    public static function testConnection($server) {
+
+        $mail = new PHPMailer(true);
+        $mail->isSMTP();                                            // Send using SMTP
+        $mail->Host       = $server["host"];                    // Set the SMTP server to send through
+        $mail->SMTPAuth   = true;                                   // Enable SMTP authentication
+        $mail->Username   = $server["username"];                     // SMTP username
+        $mail->Password   = $server["password"];                               // SMTP password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` also accepted
+        $mail->Port       = $server["port"];                                    // TCP port to connect to
+        $mail->setFrom($server["account"], $server["account"]);
+        $mail->addAddress($server["recipient"]["email"], $server["recipient"]["name"]);
+        $mail->Body = "TEST EMAIL MESSAGE FROM GFC CINEMA PLATFORM.";
+
+        // Content
+        $mail->isHTML(true);                                  // Set email format to HTML
+
+        try {
+
+            $mail->send();
+
+        } catch(Exception $e) {
+
+            return array("status" => false, "error" => $e->getMessage());
+
+        }
+
+        return array("status" => true);
+
+    }
+
     public function Help() {
 
         $html = "<p>Welcome to the help screen. Below, please find the order that you need to call the functions in to successfully send an email.</p>";

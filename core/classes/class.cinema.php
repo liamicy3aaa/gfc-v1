@@ -117,6 +117,22 @@ class cinema {
         return (($query->numRows() < 1) ? false : $query->fetchArray());
 
     }
+
+    public function updateConfigItem($key, $value) {
+
+        $query = $this->conn->query("UPDATE gfc_config SET `value` = '$value' WHERE `key` = '$key'")->affectedRows();
+
+        if($query < 1){
+
+            return false;
+
+        } else {
+
+            return true;
+
+        }
+
+    }
     
     public function createScreen($screenName, $status) {
         

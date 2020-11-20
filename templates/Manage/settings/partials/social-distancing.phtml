@@ -1,0 +1,256 @@
+<div class="card shadow mb-4">
+    <div class="card-header py-4" style="line-height:2;">
+        <h6 class="d-inline m-0 font-weight-bold text-primary">Social Distancing</h6>
+
+    </div>
+    <div class="card-body">
+        <form>
+        <h6 class="font-weight-bold text-primary">Enable / disable social distancing</h6>
+        <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="switch1" name="example" %SDCHECK% data-current="%SDCHECK%">
+            <label class="custom-control-label" for="switch1">Enable social distancing system </label>
+        </div>
+        <small>Please note, when this is turned on, it will only take affect for showings in the future. If you turn this off, it will only turn it off bookings in the future. </small>
+        </form>
+        <hr/>
+            <div class="row">
+                <div id="seatDistanceAlert" class="col-6"></div>
+                <div class="container mx-0 px-3">
+                    <h6 class="font-weight-bold text-primary">Seats to skip</h6>
+                    <p class="small">Number of seats that need to be blocked of either side of the users seat selection.</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="input-group mb-3">
+                                <input id="seatDistance" type="number" min="0" class="form-control" placeholder="1" value="%SDH%" aria-label="Number of seats" aria-describedby="button-addon2">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-success" type="button" id="button-addon2">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="container mx-0 px-3">
+                    <h6 class="font-weight-bold text-primary">Rows to skip </h6>
+                    <p class="small">Number of seats that need to be blocked of in front & behind.</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="input-group mb-3">
+                                <input id="rowDistance" type="number" min="0" class="form-control" placeholder="1" value="%SDV%" aria-label="Number of seats" aria-describedby="button-addon2">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-success" type="button" id="button-addon3">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form class="px-1">
+                <h6 class="font-weight-bold text-primary">Block off diagonal seats</h6>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="switch2" name="diagonals" %DCHECK% data-current="%DCHECK%">
+                    <label class="custom-control-label" for="switch2">Block off diagonal seats</label>
+                </div>
+                <small>Block four diagonal seats around the selection.</small>
+            </form>
+        <div id="distancingSection" class="%SD% d-none">
+            <hr/>
+            <h6 class="font-weight-bold text-primary">Tools</h6>
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <div class="list-group" id="settings-nav" role="tablist">
+                        <a id="updateDistancing" href="Javacript:void(0)" class="list-group-item list-group-item-action my-2 pt-3">
+                            <span class="fas fa-sliders-h float-left mt-2 mr-3 d-none d-md-block" style="font-size:30px;"></span>
+                            <span class="fas fa-chevron-right float-right mt-3"></span>
+                            <h6 class="mb-1 d-inline">Update booking distancing</h6>
+                            <p class="mb-1 small">Update each booking's social distancing seats.</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $("#seatDistance").on("change keyup paste", function(){
+
+        $('#button-addon2').removeClass('btn-outline-success').addClass('btn-success');
+
+    });
+
+    $("#rowDistance").on("change keyup paste", function(){
+
+        $('#button-addon3').removeClass('btn-outline-success').addClass('btn-success');
+
+    });
+
+    $("#button-addon2, #button-addon3").on("click", function(){
+
+        var param;
+        var cmd;
+        $(".alert").hide();
+
+            showModal("Are you sure?", "After changing this option, we recommend you run the update distance tool to ensure bookings seat selections match the required setting.<br/><button id='toggleConfirm' class='btn btn-success btn-block'>Continue</button>", {vcenter:true});
+            event.preventDefault();
+
+            switch($(this).attr("id")) {
+
+                case "button-addon2":
+                    param = $("#seatDistance").val();
+                    cmd = "distanceHorizontal";
+                    break;
+
+                case "button-addon3":
+                    param = $("#rowDistance").val();
+                    cmd = "distanceVertical";
+                    break;
+
+                default:
+                    alert("An error occurred. Please try again later.");
+                    return;
+            }
+
+        $("#toggleConfirm").on("click", function() {
+
+            $(this).html("Saving...");
+            $(this).addClass("disabled");
+            $(this).attr("disabled", "disabled");
+
+            $.ajax({
+                url: "/Manage/settings/social-distancing/" + cmd,
+                method: "POST",
+                data: {param:param},
+                success: function(result){
+
+                    $("#seatDistanceAlert").prepend("<div class=\"alert updateAlert alert-success alert-dismissible fade show\" role=\"alert\">\n" +
+                        "Successfully updated.\n" +
+                        "  <button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\">\n" +
+                        "    <span aria-hidden=\"true\">&times;</span>\n" +
+                        "  </button>\n" +
+                        "</div>");
+
+                    closeModal();
+
+                },
+                error: function(err) {
+
+                    alert("ERROR OCCURRED");
+
+                    try {
+                        var res = JSON.parse(err.responseText);
+
+                    } catch(e) {
+
+                        updateModal("<h4>An error occurred.</h4>");
+                        return;
+                    }
+
+                    updateModal("<h4>ERROR</h4><p>" + res.error_desc + "</p>");
+
+                }
+            });
+
+
+
+        });
+
+    });
+
+    // ** UPDATE BOOKING DISTANCING **/
+    $("#switch2, #switch1").on("click", function() {
+
+        var param;
+        var messageOn;
+        var messageOff;
+        var cmd;
+        var id = "#" + $(this).attr("id");
+
+
+        switch($(this).attr("id")) {
+
+            case "switch2":
+                messageOn = "Are you sure? This will trigger an update of all booking social distancing for upcoming performances.";
+                messageOff = messageOn;
+                cmd = "distanceDiagonal";
+                break;
+
+            case "switch1":
+                messageOn = "Turning this off will turn off social distancing for showings that haven't already passed.";
+                messageOff = "Turning this on will turn on social distancing for showings that haven't already passed.";
+                cmd = "status";
+                break;
+
+            default:
+                alert("ERROR");
+                return;
+        }
+
+        var continueBtn = "<br/><button id='toggleConfirm' class='btn btn-success btn-block'>Continue</button>";
+
+        if($("#" + $(this).attr("id")).attr("data-current") == "checked" && $("#" + $(this).attr("id") + ":checked").length == 0) {
+
+            showModal("Are you sure?", messageOn + continueBtn, {vcenter:true});
+            event.preventDefault();
+            param = 0;
+
+
+        } else {
+
+            showModal("Are you sure?", messageOff + continueBtn, {vcenter:true});
+            event.preventDefault();
+            param = 1;
+
+        }
+
+        $("#toggleConfirm").on("click", function(){
+
+            $(this).html("Processing...");
+            $(this).addClass("disabled");
+            $(this).attr("disabled", "disabled");
+
+            $.ajax({
+                url: "/Manage/settings/social-distancing/" + cmd,
+                method: "POST",
+                data: {param:param},
+                success: function(result){
+
+
+
+                    if(param == 1) {
+
+                        $(id).prop("checked", true);
+
+                        if(id == "#switch1") {
+                            $("#distancingSection").slideDown();
+                        }
+                        updateModal("<h4 class='text-success'>Social distancing is now enabled.</h4>");
+
+                    } else {
+
+                        $(id).prop("checked", false);
+                        if(id == "#switch1") {
+                            $("#distancingSection").slideUp();
+                        }
+
+                    }
+
+                        closeModal();
+
+                },
+                error: function(err) {
+
+                    alert("ERROR OCCURRED");
+                    $(this).html("Continue");
+                    $(this).removeClass("disabled");
+                    $(this).removeAttr("disabled");
+
+                    console.log(JSON.parse(err.responseText));
+
+                }
+            });
+
+        });
+
+    });
+</script>

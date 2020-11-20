@@ -1,0 +1,46 @@
+<div class="container container-fluid">
+    <h1 class="h3 mb-0 text-gray-800">Settings</h1>
+    <p class="mb-4">Configure the platform to your needs using the options below.</p>
+    <div class="row">
+        <div class="col-12 col-md-4">
+            <div class="list-group" id="settings-nav" role="tablist">
+                <a class="list-group-item list-group-item-action active" id="list-home-list" data-toggle="list" href="#settings-general" role="tab" aria-controls="home">General</a>
+                <a class="list-group-item list-group-item-action" id="list-profile-list" data-toggle="list" href="#settings-bookings" role="tab" aria-controls="profile">Bookings</a>
+                <a class="list-group-item list-group-item-action" id="list-messages-list" data-toggle="list" href="#settings-security" role="tab" aria-controls="messages">Security</a>
+                <a class="list-group-item list-group-item-action" id="list-settings-list" data-toggle="list" href="#settings-advanced" role="tab" aria-controls="settings">Advanced</a>
+            </div>
+        </div>
+        <div class="col-12 col-md-8">
+            <div class="tab-content" id="nav-tabContent">
+                <div class="tab-pane fade show active" id="settings-general" role="tabpanel" aria-labelledby="list-home-list">
+                    <div class="list-group">
+                        <a href="/Manage/settings/email" class="list-group-item list-group-item-action my-2 pt-3">
+                            <span class="fas fa-envelope float-left mt-2 mr-3 d-none d-md-block" style="font-size:30px;"></span>
+                            <span class="fas fa-chevron-right float-right mt-3"></span>
+                            <h6 class="mb-1 d-inline">Configure email</h6>
+                            <p class="mb-1 small">Configure the email all system emails will go from.</p>
+                        </a>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settings-bookings" role="tabpanel" aria-labelledby="list-profile-list">
+                    <div class="list-group">
+                        <a href="/Manage/settings/social-distancing" class="list-group-item list-group-item-action my-2 pt-3">
+                            <span class="fas fa-people-arrows float-left mt-2 mr-3 d-none d-md-block <?php print $data["socialDistancing"]; ?>" style="font-size:30px;"></span>
+                            <span class="fas fa-chevron-right float-right mt-3"></span>
+                                <h6 class="mb-1 d-inline">Social distancing</h6>
+                            <p class="mb-1 small">Apply social distancing to cinema bookings.</p>
+                        </a>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settings-security" role="tabpanel" aria-labelledby="list-messages-list">...</div>
+                <div class="tab-pane fade" id="settings-advanced" role="tabpanel" aria-labelledby="list-settings-list">...</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $('#settings-nav a').on('click', function (e) {
+        e.preventDefault()
+        $(this).tab('show')
+    })
+</script>

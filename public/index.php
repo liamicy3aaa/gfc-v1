@@ -16,6 +16,7 @@ include "../routes/account.php";
 include "../routes/manage.php";
 include "../routes/auth.php";
 include "../routes/payments.php";
+include "../routes/settings.php";
 ///////////////////
 
 $app->get('/', function (Request $request, Response $response, array $args) {
