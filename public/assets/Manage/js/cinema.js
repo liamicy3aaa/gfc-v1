@@ -38,7 +38,47 @@ var Cinema = {
         });
     
     },
-    
+
+    newTicket: function() {
+
+        $.ajax({
+            url: "/Manage/ajax/tickets/new",
+            method: "GET",
+            success: function(response){
+
+                showModal("New Ticket", response.html, {"size":"sm", "vcenter":true});
+
+                $("#newTicketSubmit").on("click", function(){
+
+                    var data = $(this).closest("form").serialize();
+
+                    $.ajax({
+                        url: "/Manage/ajax/tickets/new",
+                        method: "POST",
+                        data: data,
+                        success: function(response) {
+
+                            //alert(response);
+                            location.reload();
+
+                        },
+                        error: function(err, status) {
+
+                            var response = JSON.parse(err.responseText);
+
+                            alert(response.error_desc);
+                            console.log(response);
+
+                        }
+                    });
+
+                });
+
+            }
+        });
+
+    },
+
     newFilm: function() {
         
         $.ajax({
