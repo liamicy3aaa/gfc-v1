@@ -12,6 +12,45 @@ class user {
         
         
     }
+
+    public function getUserInfo($columns = false, $user = false) {
+
+        $allowed = array("id", "user_id", "user_name", "user_email", "user_type", "user_created","user_lastlogin");
+
+        if($columns !== false) {
+
+            foreach($columns as $column) {
+
+                if(!in_array($column, $allowed)) {
+
+                    return array(
+                        "status" => false,
+                        "error" => "invalid_column",
+                        "error_desc" => "$column is not an allowed column."
+                    );
+
+                }
+
+            }
+
+            $columns = implode(",", $columns);
+
+        } else {
+
+            $columns = "*";
+
+        }
+
+        $user = (($user === false) ? $_SESSION["user"]["id"] : $user);
+
+        $query = $this->conn->query("SELECT $columns FROM gfc_users WHERE id = ?", $user)->fetchArray();
+
+        return array(
+            "status" => true,
+            "data" => $query
+        );
+
+    }
     
     /**
     * Authenticate
@@ -271,7 +310,7 @@ class user {
                 
                     if($param == 1) {
                     
-                        if (!preg_match('/[\'^£$%&*()}{@#~?><>,|=_+¬-]/', $password)) {  
+                        if (!preg_match('/[\'^ï¿½$%&*()}{@#~?><>,|=_+ï¿½-]/', $password)) {  
                             
                             // No special character
                             $error["status"] = true;
