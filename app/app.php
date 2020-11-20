@@ -1,11 +1,24 @@
 <?php
 ob_end_clean();
+
+// **PREVENTING SESSION HIJACKING**
+// Prevents javascript XSS attacks aimed to steal the session ID
+ini_set('session.cookie_httponly', 1);
+
+// **PREVENTING SESSION FIXATION**
+// Session ID cannot be passed through URLs
+ini_set('session.use_only_cookies', 1);
+
+// Uses a secure connection (HTTPS) if possible
+ini_set('session.cookie_secure', 1);
+
 session_name("GFC-AUTH");
 session_start();
 date_default_timezone_set("Europe/London");
-error_reporting(-1);
-ini_set('display_errors', 0);
+error_reporting(1);
+ini_set('display_errors', 1);
 require '../vendor/autoload.php';
+require '../core/write_ini_file.php';
 
 // Registering autoloader //
 spl_autoload_register('gfcAutoload');
@@ -36,15 +49,56 @@ $container = $app->getContainer();
 
 $container["db"] = function() {
 
-    $conn = parse_ini_file("../app/db.ini");
+
+
+    try {
+
+        write_ini_file("../app/test.ini", array(
+            "keys" => array(
+                "key1" => "123",
+                "key2" => "456"
+            )
+        ));
+
+        $conn = parse_ini_file("../app/db.ini");
+
+        if(!$conn) {
+
+            throw new Exception("DEVELOPER: Database configuration file is missing. (LINE " . __LINE__ . " - " . __FILE__ . ")");
+
+        }
+
+    } catch(Exception $e) {
+
+        die($e->getMessage());
+
+    }
 
     return new db($conn["host"], $conn["username"], $conn["password"], $conn["database"]);
 
 };
 
+$container["files"] = function($container) {
+
+    return new files();
+
+};
+
 $container["payments"] = function($container) {
 
-    $keys = parse_ini_file("../app/stripe.ini");
+    try {
+        $keys = parse_ini_file("../app/stripe.ini");
+
+        if (!$keys) {
+
+            throw new Exception("DEVELOPER: Stripe configuration file is missing. (LINE " . __LINE__ . " - " . __FILE__ . ")");
+
+        }
+    } catch (Exception $e) {
+
+        die($e->getMessage());
+
+    }
 
     return new payments($keys["PUBLIC_KEY"], $keys["PRIVATE_KEY"], $container["db"]);
 
