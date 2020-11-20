@@ -1718,7 +1718,19 @@ $app->group("/Manage", function(){
 
         }
 
-        $html = file_get_contents("../templates/Manage/authentication/login.phtml");
+        // Generating CSRF token for form
+        if(!isset($_SESSION["authToken"])) {
+
+            $auth = cipher::encrypt(time() + rand(14));
+            $_SESSION["authToken"] = $auth;
+
+        } else {
+
+            $auth = $_SESSION["authToken"];
+
+        }
+
+        $html = str_replace(array("%AUTHTOKEN%"), array($auth), file_get_contents("../templates/Manage/authentication/login.phtml"));
         
         $errors = notifications::display() . "<br/>";
 

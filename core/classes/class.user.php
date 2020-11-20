@@ -392,6 +392,13 @@ class user {
         }
         
     }
+
+    public function lockout() {
+
+        $_SESSION["lockOut"] = time() + 900;
+        return true;
+
+    }
     
     /**
     * Redirect
