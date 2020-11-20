@@ -3,6 +3,120 @@
 $app->group("/Manage", function(){
     
     /** AJAX */
+
+    $this->get("/ajax/tickets/new", function($request, $response, $args) {
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        return $response->withJson(array("status"=>200, "html"=>file_get_contents("../templates/Manage/tickets/partial_new_ticket.phtml")), 200);
+
+    });
+
+    $this->post("/ajax/tickets/new", function($request, $response, $args) {
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        $cinema = $this->get("cinema");
+        $body = $request->getParsedBody();
+        $validChars = array(" ", "'", ".");
+        $required = array("ticketLabel", "ticketSeats", "ticketCost");
+        $optional = array("ticketProof", "ticketCeaFree", "ticketCeaFull", "ticketActive");
+        $dataToTable = array(
+            "ticketLabel" => "ticket_label",
+            "ticketCost" => "ticket_cost",
+            "ticketSeats" => "seats",
+            "ticketProof" => "proof",
+            "ticketCeaFree" => "cea_free",
+            "ticketCeaFull" => "cea_full",
+            "ticketActive" => "ticket_status"
+        );
+
+        $data = array();
+
+        foreach($required as $item) {
+
+
+            if (!isset($body[$item])) {
+
+                return $response->withJson(array("status" => 400, "error" => "missing_info", "error_desc" => "$item missing from request."), 400);
+
+            }
+
+            if (strlen($body[$item]) < 1) {
+
+                return $response->withJson(array("status" => 400, "error" => "missing_info", "error_desc" => "$item must be at least 1 character long."), 400);
+
+            }
+
+            if (!ctype_alnum(str_replace($validChars, "", $body[$item]))) {
+
+                return $response->withJson(array("status" => 400, "error" => "invalid_$item", "error_desc" => "Screen name can only contain letters or number."), 400);
+
+            }
+
+            $data[$dataToTable[$item]] = $body[$item];
+
+        }
+
+        foreach($optional as $item) {
+
+            if(isset($body[$item])) {
+
+                if (strlen($body[$item]) < 1) {
+
+                    return $response->withJson(array("status" => 400, "error" => "missing_info", "error_desc" => "$item must be at least 1 character long."), 400);
+
+                }
+
+                if (!ctype_alnum(str_replace($validChars, "", $body[$item]))) {
+
+                    return $response->withJson(array("status" => 400, "error" => "invalid_$item", "error_desc" => "$item can only contain letters or number."), 400);
+
+                }
+
+                $data[$dataToTable[$item]] = $body[$item];
+
+            }
+
+        }
+
+        if(!isset($body["ticketActive"])) {
+
+            $data["ticket_status"] = 0;
+
+        }
+
+        if(isset($body["ticketSeats"])) {
+
+            $data[$dataToTable["ticketSeats"]] = intval($body["ticketSeats"]);
+
+        }
+
+        if(isset($body["ticketProof"])) {
+
+            $data[$dataToTable["ticketProof"]] = intval($body["ticketProof"]);
+
+        }
+
+        $creation = $cinema->createTicket($data);
+
+       // exit;
+
+        if($creation["status"]) {
+
+            notifications::add("success", "Ticket successfully created", array("dismiss"=>false));
+
+            return $response->withJson(array("status"=>200), 200);
+
+        } else {
+
+            return $response->withJson(array("status"=>500, "error" => "An error occurred."), 500);
+
+        }
+
+    });
     
     $this->get("/ajax/screens/new", function($request, $response, $args) {
         
@@ -980,6 +1094,47 @@ $app->group("/Manage", function(){
             "_user" => $_SESSION["user"],
             "_page" => "screens",
             "screens" => $tableHtml
+        ]);
+
+
+    });
+
+    /** TICKETS */
+
+    $this->get("/tickets", function($request, $response, $args){
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        $cinema = $this->get("cinema");
+
+        $tickets = $cinema->getTicketInfo("*");
+
+        $tableHtml = "";
+        setlocale(LC_MONETARY,"en");
+        foreach($tickets as $index => $ticket) {
+
+            $tableHtml .= "<tr " . (($ticket['ticket_status'] == 0) ? "class='bg-gray-100 text-gray-500'" : "") . ">";
+
+            $tableHtml .= "<td>" . $ticket["id"] . "</td>";
+            $tableHtml .= "<td><a href='/Manage/tickets/" . cipher::encrypt($ticket["id"]) . "'>" . $ticket["ticket_label"] . " " . (($ticket['ticket_status'] == 0) ? "[Inactive]": "") . "</a></td>";
+            $tableHtml .= "<td>&pound;" .  money_format("%i", $ticket["ticket_cost"]). "</td>";
+
+            $tableHtml .= "<td>";
+
+            $tableHtml .= "<a href='/Manage/tickets/" . cipher::encrypt($ticket["id"]) . "' class='btn btn-primary'>view</a>";
+
+            $tableHtml .= "</td>";
+
+            $tableHtml .= "</tr>";
+
+        }
+
+        return $this->manageView->render($response, "/tickets/overview.phtml", [
+            "_title" => "Manage Tickets",
+            "_user" => $_SESSION["user"],
+            "_page" => "tickets",
+            "tickets" => $tableHtml
         ]);
 
 

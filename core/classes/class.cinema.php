@@ -1373,6 +1373,74 @@ class cinema {
 
 
     }
+
+    public function createTicket($data, $options = array()) {
+
+
+
+        $required = array("ticket_label", "seats", "ticket_status", "ticket_cost");
+        $configItems = array("proof", "seats");
+
+        foreach($required as $item) {
+
+            if(!isset($data[$item])) {
+
+                return array("status" => false, "error" => "missing_info", "error_desc" => "Missing $item from request.");
+
+            }
+
+        }
+
+        // building data to turn into query
+        $sqlData = array(
+            "ticket_config" => array()
+        );
+        $sqlColumns = array("ticket_config");
+        $sqlValues = array("ticket_config" => "");
+
+        foreach($data as $column => $value) {
+
+                if(in_array($column, $configItems)) {
+
+                    $sqlData["ticket_config"][$column] = $value;
+
+                } else {
+
+                    $sqlColumns[] = $column;
+                    $sqlData[$column] = $value;
+
+                }
+
+        }
+
+        $x = 0;
+        foreach($sqlData as $column => $data) {
+
+            $comma = (($x >= 1) ? "," : "");
+
+            if($column == "ticket_config") {
+
+                $sqlValues = "$comma '" . json_encode($data, true) . "'";
+
+            } else {
+
+                $sqlValues .= "$comma" . ((is_string($data)) ? "'$data'" : $data) . "";
+
+            }
+
+            $x++;
+        }
+
+        $query = "INSERT INTO gfc_ticket_types (" . implode(",", $sqlColumns) . ") VALUES ($sqlValues)";
+        //http_response_code(400);
+        //print "<pre>"; print_r($query); print "</pre>";
+        //exit;
+
+        $this->conn->query($query);
+
+        return array("status" => true);
+
+    }
     
     public function getTicketTypes($ids = array(), $onlyActive = true) {
         
