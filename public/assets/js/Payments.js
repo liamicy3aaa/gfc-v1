@@ -127,7 +127,11 @@ var Payments = {
         Payments.settings.Stripe.createPaymentMethod({
                 type: 'card',
                 card: cardNumber
-            }).then(Payments.stripeHandler);
+            }).then(Payments.stripeHandler)
+            .catch(error => {
+                // Show error in payment form
+                Payments.settings.onError("An error occurred. Please try again later.");
+            });
         });
 
     },
