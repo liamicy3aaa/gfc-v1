@@ -28,6 +28,13 @@ class cinema {
 
     }
 
+
+    /**
+     * Create Countdown
+     * Generates the countdown html that can be used by the frontend JS script to display a countdown.
+     *
+     * @return string
+     */
     /**
     * Build promo banner
     * Builds the main banner on the front page using data from the database
@@ -110,6 +117,14 @@ class cinema {
 
     }
 
+
+    /**
+     * Get a config item
+     * Allows you to retrieve a config item for the platform
+     *
+     * @param $key
+     * @return bool
+     */
     public function getConfigItem($key) {
 
         $query = $this->conn->query("SELECT * FROM gfc_config WHERE `key` = ?", $key);
@@ -118,6 +133,14 @@ class cinema {
 
     }
 
+    /**
+     * Update a config item
+     * Allows you to update a config item for the platform
+     *
+     * @param $key
+     * @param $value
+     * @return bool
+     */
     public function updateConfigItem($key, $value) {
 
         $query = $this->conn->query("UPDATE gfc_config SET `value` = '$value' WHERE `key` = '$key'")->affectedRows();
@@ -133,7 +156,15 @@ class cinema {
         }
 
     }
-    
+
+    /**
+     * Create Screen
+     * Allows you to create a new screen for the platform
+     *
+     * @param $screenName
+     * @param $status
+     * @return bool
+     */
     public function createScreen($screenName, $status) {
         
         $query = $this->conn->query("INSERT INTO gfc_screens (screen_name,status) VALUES (?, ?)", $screenName, $status);
@@ -141,7 +172,14 @@ class cinema {
         return true;
         
     }
-    
+
+    /**
+     * Delete Screen
+     * Allows you to delete a screen from the platform
+     *
+     * @param $screenId
+     * @return bool
+     */
     public function deleteScreen($screenId) {
         
         
@@ -193,7 +231,14 @@ class cinema {
         return $film;
         
     }
-    
+
+    /**
+     * Screen Exists
+     * Allows you to easily check if a screen with the provided id exists
+     *
+     * @param $id
+     * @return bool
+     */
     public function screenExists($id) {
         
         $r = $this->conn->query("SELECT id FROM gfc_screens WHERE id = ?", $id)->numRows();
@@ -201,6 +246,13 @@ class cinema {
         return (($r < 1) ? false : true);
     }
 
+    /**
+     * Get screen last row
+     * Allows you to obtain the row label for the last row in a screen
+     *
+     * @param $id
+     * @return array
+     */
     public function getScreenLastRow($id) {
 
         $result = $this->conn->query("SELECT MAX(seat_row) as 'row', MAX(seat_row_label) as 'row_label' FROM gfc_screens_seats WHERE screen_id = ?", $id)->fetchArray();
@@ -212,6 +264,12 @@ class cinema {
 
     }
 
+    /**
+     * Add Screen Rows
+     * Allows you to add rows of seats to a screen. Requires an array which has the required key value pairs.
+     * @param array $params
+     * @return array
+     */
     public function addScreenRows($params = array()) {
 
         $required = array("screenId", "rows", "seats", "seatLabel");
@@ -270,7 +328,16 @@ class cinema {
         return array("status" => true);
 
     }
-    
+
+    /**
+     * Re-order Screen Rows
+     * Allows you to reorder a screen row.
+     *
+     * @param $id
+     * @param $rowOrder
+     * @param array $options
+     * @return bool
+     */
     public function reorderScreenRows($id, $rowOrder, $options = array()) {
         
         // Step 1 - Get the list of seats for the screens
@@ -305,7 +372,13 @@ class cinema {
         return true;
         
     }
-    
+
+    /**
+     * Add Film
+     * Allows you to create a new film for the platform.
+     * @param array $data
+     * @return array
+     */
     public function addFilm($data) {
         
         $required = array("film_name", "film_desc", "film_release", "film_release", "film_runtime");
@@ -347,7 +420,15 @@ class cinema {
             return array("status" => true, "filmId" => $id); 
         
     }
-    
+
+    /**
+     * Update film status
+     * Allows you to update a status of film to either be active or disabled.
+     *
+     * @param $filmId
+     * @param bool $status
+     * @return bool
+     */
     public function updateFilmStatus($filmId, $status = false) {
         
         if($status === false) {
@@ -365,6 +446,13 @@ class cinema {
         
     }
 
+    /**
+     * Delete Film
+     * Allows you to delete a film from the platform
+     *
+     * @param Int $filmId
+     * @return array
+     */
     public function deleteFilm($filmId) {
 
         // Check id matches a film in the database
@@ -414,6 +502,13 @@ class cinema {
 
     }
 
+
+    /**
+     * Add Showing
+     * Allows you to create a showing on the platform.
+     * @param array $data
+     * @return array
+     */
     public function addShowing($data) {
 
         $required = array(
@@ -502,9 +597,8 @@ class cinema {
     * Get information about a film
     *  
     * @param mixed $id
-    * @return array
+    * @return bool|array
     */
-    
     public function getFilmData($id = false) {
         
         if(!$id) {
@@ -519,6 +613,12 @@ class cinema {
         
     }
 
+    /**
+     * Film Exists
+     * Can check if a film with the provided id exists.
+     * @param bool $id
+     * @return bool
+     */
     public function filmExists($id = false){
 
         if(!$id) {
@@ -530,13 +630,15 @@ class cinema {
         return (($film == 1) ? true : false);
 
     }
-    
+
     /**
-    * Get data for either particular films or all active films on the system.
-    * 
-    * @param mixed $ids
-    */
-    
+     * Get Films
+     * Get data for films with the provided ids with the option to only show active films.
+     *
+     * @param array $ids
+     * @param bool $onlyActive
+     * @return mixed
+     */
     public function getFilms($ids = array(), $onlyActive = true) {
         
         if(count($ids) >= 1) {
@@ -554,7 +656,12 @@ class cinema {
         return $films;
         
     }
-    
+
+    /**
+     * Get All Films
+     * Get an array of all films on the system.
+     * @return array
+     */
     public function getAllFilms() {
         
             $films = $this->conn->query("SELECT * FROM gfc_films")->fetchAll();
@@ -601,6 +708,7 @@ class cinema {
         return $types;
         
     }
+
 
     public function getFilmInfo($ids, $onlyActive = true) {
 
@@ -711,9 +819,8 @@ class cinema {
     * Get information about a particular show
     * 
     * @param mixed $id
-    * @return array
+    * @return array|bool
     */
-    
     public function getShowInfo($id) {
         
         // Clean item
