@@ -845,6 +845,20 @@ $app->group("/booking", function(){
 
         }
 
+        if($showInfo["sale_unlock"] !== 0 && $showInfo["sale_unlock"] > time()) {
+
+            notifications::add("danger", "Ticket sales for this film have not started.");
+            $user->redirect("/film/" . cipher::encrypt($showInfo["film_id"]) . "");
+
+        }
+
+        if($showInfo["show_unlock"] !== 0 && $showInfo["show_unlock"] > time()) {
+
+            notifications::add("danger", "Ticket sales for this showing have not started.");
+            $user->redirect("/film/" . cipher::encrypt($showInfo["film_id"]) . "");
+
+        }
+
         // Build ticket screen
         $tickets = $cinema->buildTicketScreen($showInfo["ticket_config"]["types"]);
 

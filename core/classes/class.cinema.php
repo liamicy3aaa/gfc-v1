@@ -35,6 +35,18 @@ class cinema {
      *
      * @return string
      */
+    public function createCountdown() {
+
+        $html = "<div id='countdown' data-start='1' class='rounded countdown-circles d-flex flex-nowrap justify-content-center text-center'>";
+            $html .= "<div class='holder m-2' style='display:none;'><span id='cD' class='h1 font-weight-bold'>%D</span> <span id='cDlabel' class='countdown-label'>Days</span></div>";
+            $html .= "<div class='holder m-2' style='display:none;'><span id='cH' class='h1 font-weight-bold'>%H</span> <span id='cHlabel' class='countdown-label'>Hours</span></div>";
+            $html .= "<div class='holder m-2' style='display:none;'><span id='cM' class='h1 font-weight-bold'>%M</span> <span id='cMlabel' class='countdown-label'>Minutes</span></div>";
+            $html .= "<div class='holder m-2' style='display:none;'><span id='cS' class=\"h1 font-weight-bold\">%S</span> <span id='cSlabel' class='countdown-label'>Seconds</span></div>";
+        $html .= "</div>";
+
+        return $html;
+    }
+
     /**
     * Build promo banner
     * Builds the main banner on the front page using data from the database
@@ -826,7 +838,7 @@ class cinema {
         // Clean item
         $showId = $this->conn->conn()->real_escape_string($id);
         
-        $show = $this->conn->query("SELECT *, b.id AS 'showId', b.screen_id, b.time AS 'showtime', c.screen_name, b.`ticket_config` FROM gfc_films AS a INNER JOIN gfc_films_showtimes AS b ON a.id = b.film_id INNER JOIN gfc_screens AS c ON b.screen_id = c.id WHERE b.id = ?", $showId)->fetchArray();
+        $show = $this->conn->query("SELECT *, b.id AS 'showId', b.screen_id, b.time AS 'showtime', c.screen_name, b.`ticket_config`, b.sale_unlock as 'show_unlock' FROM gfc_films AS a INNER JOIN gfc_films_showtimes AS b ON a.id = b.film_id INNER JOIN gfc_screens AS c ON b.screen_id = c.id WHERE b.id = ?", $showId)->fetchArray();
         
         if(count($show) >= 1) {
             $show["ticket_config"] = json_decode($show["ticket_config"], true);
@@ -1399,7 +1411,8 @@ class cinema {
                     "%FILMDESC%",
                     "%SHOWTIMES%",
                     "%RUNTIME%",
-                    "%RATING%"
+                    "%RATING%",
+                    "%SHOWTIME_TITLE%"
                  );
 
         $template = file_get_contents("../templates/partials/film-card.phtml");
@@ -1413,7 +1426,8 @@ class cinema {
                 ((strlen($film["film_desc"]) > 250) ? substr($film["film_desc"], 0, 250). "..." : $film["film_desc"]),
                 $this->buildShowtimes($film, 1),
                 $film["film_runtime"],
-                $film["film_rating"]
+                $film["film_rating"],
+                (($film["sale_unlock"] !== 0 && $film["sale_unlock"] > time()) ? "Tickets go on sale " . date("l jS F h:ia", $film["sale_unlock"]) : "Showtimes")
             );
 
             $filmList .= str_replace($fields, $data, $template);
@@ -1437,11 +1451,18 @@ class cinema {
         $days = array();
         $count = 0;
 
+        // Checking if tickets have a sale_unlock
+        if($film["sale_unlock"] !== 0 && $film["sale_unlock"] > time()) {
+
+            return "<a href='film/" . cipher::encrypt($film["id"]) . "' class='btn btn-primary mt-1'>More info ></a>";
+
+        }
+
         if(count($film["showtimes"]) < 1) {
 
             if($limit !== false) {
                 
-                return "<a href='film/" . cipher::encrypt($film["id"]) . "' class='btn btn-primary mt-1'>More showtimes ></a>";
+                return "<a href='film/" . cipher::encrypt($film["id"]) . "' class='btn btn-primary'>More showtimes ></a>";
                 
             } else {
                 
@@ -1452,6 +1473,10 @@ class cinema {
         }
 
         foreach($film["showtimes"] as $showtime) {
+
+            if($showtime["sale_unlock"] !== "0" && $showtime["sale_unlock"] > time()){
+                continue;
+            }
 
             if(!isset($days[$showtime["date"]])) {
 

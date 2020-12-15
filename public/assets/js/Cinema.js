@@ -671,7 +671,55 @@ var Cinema = {
         showModal("Trailer", code, {"size":"lg", "vcenter":true});
         
         
+    },
+
+    startCountdown: function (id, targetDate, current) {
+
+        var now = current;
+        Cinema._countdownProcess(now, targetDate);
+        // Update the count down every 1 second
+        var x = setInterval(function () {
+
+            now += 1000;
+            let distance = Cinema._countdownProcess(now, targetDate);
+
+            if(distance < 1) {
+                // Simulate an HTTP redirect:
+                clearInterval(x);
+                location.reload();
+
+            }
+        }, 1000);
+    },
+
+    _countdownProcess: function(current, target) {
+
+        // Set the date we're counting down to
+        var countDownDate = target;
+
+        // Find the distance between now and the count down date
+        var distance = countDownDate - current;
+
+        // Time calculations for days, hours, minutes and seconds
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Display the result
+
+        if(days <= 1) {
+            $("#cDlabel").html("Day");
+        }
+
+        $("#cD").html(days);
+        $("#cH").html(hours);
+        $("#cM").html(minutes);
+        $("#cS").html(seconds);
+
+        return distance;
     }
+
 
 
 

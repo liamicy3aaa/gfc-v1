@@ -34,7 +34,16 @@ text-shadow:4px 2px 4px black;">
                 <?php print $data["showtimes"]; ?>
             </div>
             <hr/>
-            <p class="small">More showings will be added in the coming weeks</p>
         </div>
     </div>
 </div>
+<script>
+
+    if($("#countdown").attr("data-start") == "1") {
+        Cinema.startCountdown("#countdown", <?php print $data["countdownDate"]; ?>, <?php print $data["current_time"];?>);
+        //setTimeout(function(){
+            $("#countdown div").show();
+        //}, 1000);
+
+    }
+</script>
