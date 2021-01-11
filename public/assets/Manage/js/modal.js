@@ -5,23 +5,16 @@ function showModal(heading, content, settings) {
     
     var config = {
         "size": "sm",
-        "vcenter": false 
+        "vcenter": false,
+        "bodyColor": false
     };
 
     
     $.extend(config, settings);
 
     var mSize = "modal-" + config.size;
-    
-    if(config.vcenter) {
-        
-        var mCentered = "modal-dialog-centered";
-        
-    } else {
-        
-        var mCentered = "";
-        
-    }
+    var mCentered = (config.vcenter ? "modal-dialog-centered" : "");
+    var modalColor = (config.bodyColor ? config.bodyColor : "#ffffff");
      
     html =  '<div id="dynamicModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="confirm-modal" aria-hidden="true">';
     
@@ -34,7 +27,7 @@ function showModal(heading, content, settings) {
     html += '<span aria-hidden="true">&times;</span>';
     html += '</button>';
     html += '</div>';
-    html += '<div class="modal-body">';
+    html += '<div class="modal-body" style="background-color:' + modalColor + '">';
     html +=  content;
     html += '</div>';
     html += '</div>';  // dialog

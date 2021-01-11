@@ -9,8 +9,19 @@ class user {
         
         $this->conn = $db;
         $this->manageAccess = array("superuser");
+        $this->areas = array("manage", "customer");
+        $this->CustomerAccess = "customer";
+        $this->root = array("customer" => "/my-account", "manage" => "/Manage");
         
         
+    }
+
+    public function getUserByEmail($email) {
+
+        $result = $this->conn->query("SELECT * FROM gfc_users WHERE user_email = ? LIMIT 1", $email)->fetchArray();
+
+        return $result;
+
     }
 
     public function getUserInfo($columns = false, $user = false) {
@@ -74,7 +85,7 @@ class user {
         
         // User password
         $pwd = $r["user_pwd"];
-        
+
         // Checking if password matches
         if(password_verify($password, $pwd)) {
             
@@ -97,11 +108,15 @@ class user {
     * @param mixed $redirect [Optional] - You can provide a string url that the function can redirect to on successful completion.
     */
     
-    public function login($username, $password, $redirect = false) {
+    public function login($username, $password, $area, $redirect = false) {
         
         // Check the credentials provided are in valid format
         $id = ((ctype_alnum($username)) ? $username : false);
-        $pwd = ((ctype_alnum($password)) ? $password : false);
+        $pwd = $password;
+
+        if(!in_array($area, $this->areas)) {
+            return array("status" => "false", "reason" => "invalid_login_area", "reason_desc" => "Invalid login area provided.");
+        }
         
         if(!$id || !$pwd) {
             
@@ -138,20 +153,39 @@ class user {
         
         // Get users information
         $user = $this->conn->query("SELECT * FROM gfc_users WHERE user_id = ?", $id)->fetchArray();
-        
-        // Checking user has an account that is allowed to login
-        if(!in_array($user["user_type"], $this->manageAccess)) {
+
+        if($this->isCustomer($user["user_type"])) {
+
+            if($area !== "customer") {
+
+                return array("status" => false, "reason" => "invalid_account_type", "reason_desc" => "Invalid account type for this area.");
+
+            }
+
+            $this->createCustomerSession(array(
+                "id" => $user["id"],
+                "type" => $user["user_type"],
+                "username" => $user["user_id"],
+                "name" => $user["user_name"]
+            ));
             
-            return array("status" => false, "reason" => "invalid_account_type", "reason_desc" => "Invalid account type for this area.");
-            
+
+        } else {
+
+            if($area !== "manage") {
+
+                return array("status" => false, "reason" => "invalid_account_type", "reason_desc" => "Invalid account type for this area.");
+
+            }
+
+            $this->createManagerSession(array(
+                "id" => $user["id"],
+                "type" => $user["user_type"],
+                "username" => $user["user_id"],
+                "name" => $user["user_name"]
+            ));
+
         }
-        
-        // Setup session
-        $_SESSION["user"] = array();
-        $_SESSION["user"]["id"] = $user["id"];
-        $_SESSION["user"]["type"] = $user["user_type"];
-        $_SESSION["user"]["username"] = $user["user_id"];
-        $_SESSION["user"]["name"] = $user["user_name"]; 
         
         // Logging login
         $this->logLogin($user["id"]);
@@ -173,6 +207,32 @@ class user {
         }
         
     }
+
+    public function isManager($userRole) {
+
+        return in_array($userRole, $this->ManageAccess);
+
+    }
+
+    public function isCustomer($userRole) {
+
+        return (($userRole == $this->CustomerAccess) ? true : false);
+
+    }
+
+    public function getAreaRoot($area) {
+
+        if($area == "customer") {
+            return $this->root["customer"];
+        } elseif($area == "manage") {
+            return $this->root["manage"];
+        } else {
+
+            die("AREA ISSUE:<pre>AREA: $area</pre>");
+
+        }
+
+    }
     
     /**
     * Logout
@@ -185,6 +245,7 @@ class user {
         
         // Destroying the user part of the session
         unset($_SESSION["user"]);
+        unset($_SESSION["_customer"]);
         
         if($redirect !== false) {
             
@@ -196,6 +257,49 @@ class user {
   
         }
         
+    }
+
+    protected function hashPassword($pwd) {
+        return password_hash($pwd, PASSWORD_DEFAULT);
+    }
+
+    public function updatePassword($cinema, $user, $pwd, $notifyUser = true) {
+
+        $hashedPwd = $this->hashPassword($pwd);
+
+        $update = $this->conn->query("UPDATE gfc_users SET user_pwd = '$hashedPwd' WHERE id = ?", $user)->affectedRows();
+
+        if($update < 1) {
+
+           return false;
+
+        } else {
+
+            if(!$notifyUser) {
+
+                return true;
+
+            } else {
+
+                $user = $this->getUserInfo(array("user_email", "user_name"), $user);
+                $cinemaName = $cinema->getCinemaInfo();
+
+                $email = new email($cinema);
+                $email->setTemplate("password_updated");
+                $email->setSubject("Password updated");
+                $email->addRecipient($user["data"]["user_email"], $user["data"]["user_name"]);
+                $email->addContent(array(
+                    "%CINEMANAME%" => $cinemaName["name"]
+                ));
+
+                $send = $email->send();
+
+                    return true;
+
+            }
+
+        }
+
     }
     
     public function register($user = false) {
@@ -237,7 +341,7 @@ class user {
         }
         
         // Hash password
-        $user["user_pwd"] = password_hash($user["user_pwd"], PASSWORD_DEFAULT);
+        $user["user_pwd"] = $this->hashPassword($user["user_pwd"]);
         
         // Additional info
         $user["user_created"] = time();
@@ -290,6 +394,18 @@ class user {
         }
         
     }
+
+    private function createManagerSession($data) {
+
+        $_SESSION["user"] = $data;
+
+    }
+
+    private function createCustomerSession($data) {
+
+        $_SESSION["_customer"] = $data;
+
+    }
     
     public function validPassword($password) {
         
@@ -297,9 +413,7 @@ class user {
         $r = $this->conn->query("SELECT value AS 'settings' FROM gfc_config WHERE `key` = 'password_settings'")->fetchArray();
         
         $settings = json_decode($r["settings"], true);
-        
-        $settings = array("specialchar" => 1, "capitalchar" => 1, "number", "minlen" => 6, "maxlen" => 16);
-        
+
         $error = array("status" => false);
         
         foreach($settings as $setting => $param) {
@@ -337,6 +451,23 @@ class user {
                             
                         }
                         
+                    }
+                    break;
+
+                case "lowerchar":
+
+                    if($param == 1) {
+
+                        if(!preg_match('/[a-z]/', $password)){
+
+                            // No Capital letter
+                            $error["status"] = true;
+                            $error["reason"] = "Password must contain at least one capital letter";
+
+                            break;
+
+                        }
+
                     }
                     break;
                     
@@ -411,10 +542,18 @@ class user {
         
     }
     
-    public function loggedIn() {
-        
-        $status = ((isset($_SESSION["user"])) ? true : false);
-        
+    public function loggedIn($area = "manage") {
+
+        if($area == "manage") {
+
+            $status = ((isset($_SESSION["user"])) ? true : false);
+
+        } else {
+
+            $status = ((isset($_SESSION["_customer"])) ? true : false);
+
+        }
+
         return $status;
         
     }
@@ -438,6 +577,96 @@ class user {
         return true;
 
     }
+
+    public function generateResetCode($userId) {
+
+        $time = time()+3600;
+        $salt = random_bytes(10);
+        $user = $userId;
+        $ip = $_SERVER["REMOTE_ADDR"];
+
+        $secret = $salt . ":" . $user . ":". $time . ":" . $ip;
+        $secret = cipher::encrypt($secret);
+
+        $result = $this->conn->query("INSERT INTO gfc_users_reset (secret, user_id, expiry) VALUES ('" . $secret . "', $userId, $time)");
+
+        return $secret;
+
+    }
+
+    public function validateResetCode($code) {
+
+        $decrypted =  cipher::decrypt($code);
+        $decrypted = explode(":", $decrypted);
+
+
+        if(count($decrypted) > 4 || count($decrypted) < 1 || !ctype_digit($decrypted[1]) || time() > $decrypted[2]) {
+            notifications::add("danger", "Invalid reset code. Please try again later.");
+            $this->redirect("/");
+            return false;
+        }
+
+        // Checking code is in database
+        $data = $this->conn->query("SELECT * FROM gfc_users_reset WHERE secret = ?", $code);
+
+        if($data->numRows() < 1) {
+            notifications::add("danger", "Invalid reset code. Please try again later.");
+            $this->redirect("/");
+            return false;
+        }
+
+        $data = $data->fetchArray();
+
+        if($data["user_id"] !== intval($decrypted[1]) || $data["expiry"] !== intval($decrypted[2])) {
+            notifications::add("danger", "Invalid reset code. Please try again later.");
+            $this->redirect("/");
+            return false;
+        }
+
+        $_SESSION["resetUser"] = $data["user_id"];
+
+        // Delete any outstanding codes for this user to prevent further resets.
+        $data = $this->conn->query("DELETE FROM gfc_users_reset WHERE user_id = ?", $data["user_id"]);
+
+        return true;
+
+    }
+
+    public function sendResetPasswordLink($cinema, $userId) {
+
+        $userInfo = $this->getUserInfo(array("user_email", "user_name"), $userId);
+
+        if(!$userInfo["status"]){
+
+            return $userInfo;
+
+        }
+
+        $userEmail = $userInfo["data"]["user_email"];
+        $userName = $userInfo["data"]["user_name"];
+
+        $secret = $this->generateResetCode($userId);
+        $cinemaName = $cinema->getCinemaInfo();
+        $cinemaName = $cinemaName["name"];
+
+        $email = new email($cinema);
+        $email->setTemplate("reset-password");
+        $email->setSubject("Reset Password");
+        $email->addRecipient($userEmail, $userName);
+        $email->addContent(array(
+            "%RESETLINK%" => "https://" . $_SERVER['HTTP_HOST'] . "/auth/reset-password/$secret",
+            "%CINEMANAME%" => $cinemaName
+        ));
+
+        $emailSent =  $email->send();
+
+        if(!$emailSent["status"] && $emailSent["error"] !== null) {
+            return $emailSent;
+        } else {
+            return array("status" => true);
+        }
+
+    }
     
     /**
     * Redirect
@@ -447,6 +676,10 @@ class user {
     */
     
     public function redirect($url) {
+
+        if(strlen($url) < 1) {
+            die("ERROR URL");
+        }
         
         header("Location: " . $url . "");
         exit;

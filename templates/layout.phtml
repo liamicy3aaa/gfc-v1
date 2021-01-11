@@ -20,7 +20,7 @@
     <script src="/assets/js/Cinema.js"></script>
 </head>
 
-<body class="sidebar-toggled">
+<body class="sidebar-toggled" style="background-color:black;">
     <div id="page-header">
         <nav class="navbar navbar-dark fixed-top navbar-expand-md navigation-clean navbar-blackfade px-4 py-4" <!--style="background-color:rgb(40,45,50);-->">
             <div class="container-fluid"><a class="navbar-brand text-white" href="/"><?php print $data["__webTitle"];?></a><button class="navbar-toggler" data-toggle="collapse" data-target="#navcol-1"><span class="sr-only">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
@@ -38,11 +38,13 @@
     </div>
     <?php print notifications::display(2); ?>
     <div class="alert alert-info text-center mb-0 d-none"></div>
-    <div class="container-fluid px-0" id="page-content">
-        <?=$content?>
+    <div style="background-color:#f8f8f8;">
+        <div class="container-fluid px-0" id="page-content">
+            <?=$content?>
+        </div>
     </div>
-    <div class="footer-dark">
-        <footer>
+
+        <footer class="footer-dark">
             <div class="container">
                 <div class="row">
                     <div class="col-sm-6 col-md-3 item">
@@ -65,7 +67,7 @@
                 <p class="copyright">Gadgetfreak © 2019</p>
             </div>
         </footer>
-    </div>
+
     <script>
     
         $(function () {

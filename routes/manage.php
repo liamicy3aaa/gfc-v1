@@ -1721,10 +1721,13 @@ $app->group("/Manage", function(){
         }
 
         // Generating CSRF token for form
-        if(!isset($_SESSION["authToken"])) {
+        if(!isset($_SESSION["authToken"]) || isset($_SESSION["authTokenArea"]) && $_SESSION["authTokenArea"] !== "manage") {
 
-            $auth = cipher::encrypt(time() + rand(14));
+            $authSalt = cipher::encrypt(time() + rand(14));
+            $auth = cipher::encrypt("manage:" . $authSalt);
             $_SESSION["authToken"] = $auth;
+            $_SESSION["authTokenSalt"] = $authSalt;
+            $_SESSION["authTokenArea"] = "manage";
 
         } else {
 
@@ -1732,7 +1735,7 @@ $app->group("/Manage", function(){
 
         }
 
-        $html = str_replace(array("%AUTHTOKEN%"), array($auth), file_get_contents("../templates/Manage/authentication/login.phtml"));
+        $html = str_replace(array("%AUTHTOKEN%"), array($auth), file_get_contents("../templates/authentication/manage_login.phtml"));
         
         $errors = notifications::display() . "<br/>";
 

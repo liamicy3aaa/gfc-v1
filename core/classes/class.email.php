@@ -85,6 +85,16 @@ class email {
                 $this->template["required"] = array("%CONTENT%");
                 break;
 
+            case "reset-password":
+                $this->template["path"] = "../templates/Emails/account/reset-password.phtml";
+                $this->template["required"] = array("%RESETLINK%", "%CINEMANAME%");
+                break;
+
+            case "password_updated":
+                $this->template["path"] = "../templates/Emails/account/password-updated.phtml";
+                $this->template["required"] = array("%CINEMANAME%");
+                break;
+
             default:
                 die(__LINE__ . " Invalid template selected.");
                 break;

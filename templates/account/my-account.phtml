@@ -1,6 +1,18 @@
-<div class="container container-fluid p-3">
+<div class="jumbotron text-white pl-4 mb-0 pl-md-5 film-banner film-banner-narrow banner-dark" style="min-height: 300px;
+    background-image: url('');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: black;
+    border-radius: 0px;
+    text-shadow:4px 2px 4px black;">
+    <div class="container container-fluid film-banner-inner">
+        <p class="h2 display-4 pt-4 pt-md-1 mt-4 mt-md-1 align-middle">My Account</p>
+        <br/>
+    </div>
+</div>
+<div class="container container-fluid p-5">
 
-    <h1>My account</h1>
-    <p>Please find your account information below.</p>
+
+    <div id="account-container"><? print $data["content"]; ?></div>
 
 </div>

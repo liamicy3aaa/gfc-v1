@@ -9,6 +9,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 }
 
+a.disabled {
+    /* Make the disabled links grayish*/
+    color: #2b2b2b;
+    text-decoration: none;
+    /* And disable the pointer events */
+    pointer-events: none;
+}
+
 .btn-underline {
          
     border: none;
@@ -115,6 +123,10 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     border-radius: 50%;
     background: #4a4a4a;
     
+}
+
+.middle-height {
+    height:500px;
 }
 
 ul.movie-points {
@@ -348,6 +360,10 @@ ul.movie-points li i {
 
   /** MEDIA QUERIES **/
 @media (max-width: 767px) {
+
+    .middle-height {
+        height: auto;
+    }
 
     .countdown-circles {
         transform: scale(0.7);

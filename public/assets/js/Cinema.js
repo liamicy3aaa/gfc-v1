@@ -19,6 +19,227 @@ var Cinema = {
         }
         
     },
+
+    getLoader: function() {
+
+        return "<div class=\"text-center\">\n" +
+            "  <div class=\"spinner-border\" role=\"status\">\n" +
+            "    <span class=\"sr-only\">Loading...</span>\n" +
+            "  </div>\n" +
+            "</div>";
+
+    },
+
+    resetPassword: function() {
+
+        showModal("Reset password", Cinema.getLoader(),{"size":"lg", "vcenter":true, "bodyColor":"#f8f8f8"});
+
+        $.ajax({
+            url: "/auth/ajax/reset-password",
+            method: "GET",
+            success: function(response){
+
+                updateModal(response.html);
+
+                $("#reset-form").on("submit", function(e){
+                    e.preventDefault();
+
+                    if (this.checkValidity() === false) {
+                        $("#reset-form").addClass('was-validated');
+                        return;
+                    }
+
+                    $("#resetSubmit").addClass("disabled").attr("disabled", "true");
+                    $("#resetSubmit").html(Cinema.getLoader());
+
+                    var data = $("#reset-form").serialize();
+
+                    $.ajax({
+                        url: "/auth/ajax/reset-password",
+                        method: "POST",
+                        data: data,
+                        success: function(response) {
+
+                            updateModal("<h2>Check your email</h2><hr/><p>We have sent you a reset password link to your email.</p>");
+
+                        },
+                        error: function(err, status) {
+
+                            if(err.status !== 500) {
+
+                                var response = JSON.parse(err.responseText);
+                                alert(response.error_desc);
+                                console.log(response);
+
+                            } else {
+                                closeModal();
+                                alert("An error occurred. Please try again later.");
+
+                            }
+
+                            $("#resetSubmit").removeClass("disabled").removeAttr("disabled");
+                            $("#resetSubmit").html("Send Link");
+
+                        }
+                    });
+
+                });
+
+            }
+        });
+
+    },
+
+    startValidatePasswordHandler: function(requirements){
+
+        var settings = Object.keys(requirements);
+        var valid = {};
+        var number = ["minlen", "maxlen", "number", "lowercase"];
+
+        settings.forEach(function(item, index){
+            valid[item] = false;
+            $("#pwdCheck" + item).removeClass("d-none");
+        });
+
+        $("#resetPwd, #resetPwd2").on("keyup", function() {
+
+            var inputValue = $("#resetPwd").val();
+
+            for(var i = 0; i < settings.length; i++) {
+
+                switch (settings[i]) {
+                    case "minlen":
+                        if (inputValue.length > requirements[settings[i]]) {
+                            valid[settings[i]] = true;
+                        } else {
+                            valid[settings[i]] = false;
+                        }
+                        break;
+
+                    case "maxlen":
+                        if (inputValue.length > requirements[settings[i]] || inputValue.length < 1) {
+                            valid[settings[i]] = false;
+                        } else {
+                            valid[settings[i]] = true;
+                        }
+                        break;
+
+                    case "capitalchar":
+                        var upperCaseLetters = /[A-Z]/g;
+                        if (inputValue.match(upperCaseLetters)) {
+                            valid[settings[i]] = true;
+                        } else {
+                            valid[settings[i]] = false;
+                        }
+                        break;
+
+                    case "specialchar":
+                        var specialLetters = /\W|_/g;
+                        if (inputValue.match(specialLetters)) {
+                            valid[settings[i]] = true;
+                        } else {
+                            valid[settings[i]] = false;
+                        }
+                        break;
+
+                    case "lowerchar":
+                        var lowerCaseLetters = /[a-z]/g;
+                        if (inputValue.match(lowerCaseLetters)) {
+                            valid[settings[i]] = true;
+                        } else {
+                            valid[settings[i]] = false;
+                        }
+                        break;
+
+                    case "number":
+                        var numbers = /[0-9]/g;
+                        if (inputValue.match(numbers)) {
+                            valid[settings[i]] = true;
+                        } else {
+                            valid[settings[i]] = false;
+                        }
+                        break;
+
+                    default:
+                        console.warn("Issue validating input - " + settings[i]);
+                        break;
+                }
+
+            }
+
+            var validLength = Object.keys(valid).length;
+            validCount = 0;
+
+            for(var i = 0; i < Object.keys(valid).length; i++) {
+
+                let item = valid[settings[i]];
+
+                if(item) {
+                    validCount++;
+                    $("#pwdCheck" + settings[i]).removeClass("text-danger").addClass("text-success");
+                } else {
+                    $("#pwdCheck" + settings[i]).removeClass("text-success").addClass("text-danger");
+                }
+
+            };
+
+            let passwordsMatch = (($("#resetPwd").val().length > 1 && $("#resetPwd").val() == $("#resetPwd2").val()) ? true : false);
+
+            if(!passwordsMatch) {
+                $("#pwdCheckMatch").removeClass("text-success").addClass("text-danger");
+            } else {
+                $("#pwdCheckMatch").removeClass("text-danger").addClass("text-success");
+            }
+
+            if(validCount >= validLength && passwordsMatch) {
+                $("#resetSubmit").removeClass("disabled").removeAttr("disabled");
+            } else {
+                $("#resetSubmit").addClass("disabled").attr("disabled", "disabled");
+            }
+
+        });
+
+        $("#resetSubmit").on("click", function(){
+
+            $("#resetSubmit").addClass("disabled").attr("disabled", "true");
+            $("#resetSubmit").html(Cinema.getLoader());
+
+            var data = $("#reset-form").serialize();
+
+            $.ajax({
+                url: "/auth/reset-password",
+                method: "POST",
+                data: data,
+                success: function(response) {
+
+                    window.location.replace("/");
+                    console.log(response);
+
+                },
+                error: function(err, status) {
+
+                    if(err.status !== 500) {
+
+                        var response = JSON.parse(err.responseText);
+                        alert(response.error_desc);
+                        console.log(response);
+
+                    } else {
+                        console.log(err);
+                        alert("An error occurred. Please try again later.");
+
+                    }
+
+                    $("#resetSubmit").removeClass("disabled").removeAttr("disabled");
+                    $("#resetSubmit").html("Update Password");
+
+                }
+            });
+
+        });
+
+
+    },
     
     startTicketSelection: function() {
         

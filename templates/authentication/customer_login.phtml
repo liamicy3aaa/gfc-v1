@@ -1,0 +1,42 @@
+<div class="row">
+    <div class="col-12 col-md-6 mb-4 mb-md-0">
+        <h2>Login</h2>
+    <form class="user" action="/auth/login" method="POST">
+        <div class="form-group">
+            <input type="text" class="form-control form-control-user" name="username" id="InputUsername" placeholder="Enter Username" required>
+        </div>
+        <div class="form-group">
+            <input type="password" class="form-control form-control-user" name="password" id="InputPassword" placeholder="Password" required>
+        </div>
+        <div class="form-group">
+            <div class="custom-control custom-checkbox small">
+                <input type="checkbox" class="custom-control-input" id="customCheck">
+                <label class="custom-control-label" for="customCheck">Remember Me</label>
+            </div>
+        </div>
+        <input type="hidden" name="auth" value="%AUTHTOKEN%"/>
+        <button type="submit" class="btn btn-primary btn-user btn-block">
+            Login
+        </button>
+        <p class="text-center">
+            <a class="small text-muted" href="Javascript:void(0)" onclick="Cinema.resetPassword()">Forgot Password?</a>
+        </p>
+        <div class='d-none'>
+            <hr>
+            <a href="Javascript:void(0)" class="btn btn-google btn-user btn-block">
+                <i class="fab fa-google fa-fw"></i> Login with Google
+            </a>
+            <a href="Javascript:void(0)" class="btn btn-facebook btn-user btn-block">
+                <i class="fab fa-facebook-f fa-fw"></i> Login with Facebook
+            </a>
+        </div>
+    </form>
+    </div>
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <hr class="d-block d-md-none"/>
+        <h2>Don't have an account?</h2>
+        <p>Register for an account to allow easy access and management of your bookings as well as for exclusive treats and discounts. </p>
+        <button class="btn btn-block btn-info">Register</button>
+    </div>
+</div>
