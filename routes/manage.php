@@ -1261,7 +1261,7 @@ $app->group("/Manage", function(){
     /** SCREENS */
 
     $this->get("/screens", function($request, $response, $args){
-        
+
         $user = $this->get("user");
         $user->loginRequired();
         
@@ -1273,7 +1273,7 @@ $app->group("/Manage", function(){
         
         foreach($screens as $index => $screen) {
             
-            $activeShowings = $cinema->getShowtimesByScreen($screen["id"], false);
+            $activeShowings = $cinema->getShowtimesByScreen($screen["id"], array("includeData" => false));
             
             $tableHtml .= "<tr " . (($screen['status'] == 0) ? "class='bg-gray-100 text-gray-500'" : "") . ">";
             

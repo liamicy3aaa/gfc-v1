@@ -56,7 +56,11 @@ class cinema {
     public function buildPromoBanner() {
 
         // Step 1 - GET IDs of the films for films that have upcoming showings (Limit 4)
-        $films = $this->getShowtimes(false, true, 6);
+        $films = $this->getShowtimes(false, array(
+            "activeFilms" => true,
+            "activeShowings" => true,
+            "limit" => 6
+        ));
 
         if($films === false) {
 
@@ -1416,17 +1420,24 @@ class cinema {
 
     }
     
-    public function getShowtimesByScreen($screenId, $includeData = true, $activeOnly) {
+    public function getShowtimesByScreen($screenId, $settings = array()) {
+
+        if(empty($settings)){
+            $settings = array(
+                "includeData" => true,
+                "activeOnly" => true
+            );
+        }
         
         $time = time();
         
-        $columns = (($includeData) ? "*" : "count(id) as 'total'");
-        $active = (($activeOnly) ? "AND status = 'active'" : "");
+        $columns = (($settings["includeData"]) ? "*" : "count(id) as 'total'");
+        $active = (($settings["activeOnly"]) ? "AND status = 'active'" : "");
 
 
         $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE screen_id = ? AND time >= ? $active ORDER BY time ASC", $screenId, $time);
         
-        if($includeData) {
+        if($settings["includeData"]) {
             
             return $query->fetchAll();
             
