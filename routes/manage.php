@@ -1071,6 +1071,8 @@ $app->group("/Manage", function(){
                 unset($_SESSION["_tmp"]);
                 unset($_SESSION["current_performance_id"]);
 
+                notifications::add("success", "bookings successfully moved to the selected showing.");
+
                 return $response->withJson(array(
                     "status" => 200,
                     "processed" => $processed,

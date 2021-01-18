@@ -1042,7 +1042,7 @@ class cinema {
         $minCapacity = ((isset($settings["minCapacity"])) ? $settings["minCapacity"] : false);
 
         // Queries
-        $q1 = "SELECT a.*, c.screen_name, count(d.id) as screen_seats FROM gfc_films_showtimes as a INNER JOIN gfc_screens as c ON a.screen_id = c.id inner JOIN gfc_screens_seats as d ON c.id = d.screen_id WHERE NOT a.id = ? AND a.film_id = ? AND a.time >= ? $sameScreenOnly GROUP BY a.id";
+        $q1 = "SELECT a.*, c.screen_name, count(d.id) as screen_seats FROM gfc_films_showtimes as a INNER JOIN gfc_screens as c ON a.screen_id = c.id inner JOIN gfc_screens_seats as d ON c.id = d.screen_id WHERE NOT a.id = ? AND a.film_id = ? AND a.time >= ? AND a.status = 'active' $sameScreenOnly GROUP BY a.id";
         $q2 = "SELECT count(booking_seats_total) as 'records', sum(booking_seats_total) as 'booked_seats' FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (\"PAID\", \"RESERVED\")";
 
         $r1 = $this->conn->query($q1, $show, $film, time())->fetchAll();

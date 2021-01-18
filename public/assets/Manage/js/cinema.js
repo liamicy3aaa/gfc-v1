@@ -954,12 +954,32 @@ var Cinema = {
                                     "method": "POST",
                                     "data": {fixConflict:fix},
                                     "success": function(result){
-
-                                        alert("Success. Page would now refresh.");
-
+                                        location.reload();
                                     },
                                     "error": function(err) {
-                                        alert("An error occurred. Check console.");
+                                        if(err.status == 500) {
+                                            alert("A server error occurred. Please try again later.");
+                                            closeModal();
+                                        } else {
+                                            let r = JSON.parse(err.responseText);
+
+                                            switch(r.error) {
+
+                                                case "invalid_param":
+                                                    alert("An error occurred. Please try again later.");
+                                                    break;
+
+                                                case "missing_param":
+                                                    alert("An error occurred. Please try again later.");
+                                                    break;
+
+                                                default:
+                                                    alert("An error occurred. Please try again later.");
+                                                    break;
+                                            }
+
+                                            closeModal();
+                                        }
                                     }
                                 });
                             });
