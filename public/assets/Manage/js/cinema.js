@@ -902,9 +902,103 @@ var Cinema = {
 
     },
 
-    movePerformance: function(bookingId) {
+    movePerformance: function(showId) {
 
-        showModal("Move Performance", "<h3 class='p-5 text-center'>Loading...</h3>", {"size":"lg", "vcenter":true});
+        let show = showId;
+
+        showModal("Move Booking", "<h3 class='p-5 text-center'>Loading...</h3>", {"size":"lg", "vcenter":true});
+
+        $.ajax({
+            url:"/Manage/ajax/showings/" + showId + "/movePerformance",
+            method: "GET",
+            success: function(result) {
+
+                updateModal(result);
+                console.log("success");
+
+                $(".MP-item").on("click", function () {
+
+                    let id = $(this).attr("data-showid");
+
+                    $("#MPstep1").hide();
+                    $(".Bkloader").show();
+
+                    $.ajax({
+                        url: "/Manage/ajax/showings/" + showId + "/movePerformance/selected",
+                        method: "POST",
+                        data: {showId: id},
+                        success: function(result) {
+
+                            $("#MPstep2").html(result.html);
+                            $(".Bkloader").hide();
+                            $("#MPstep2").show();
+
+                            $(".MP-back").unbind("click").on("click", function(){
+
+                                $("#MPstep2").hide();
+                                $("#MPstep2 .screen tbody").html("");
+                                $("#MPstep1").show();
+
+                            });
+
+                            $("#startTransfer").on("click", function(){
+                                if(!$('input[name="fixConflict"]:checked').val() && $("#startTransfer").attr("data-conflicts") >= 1) {
+                                    alert("Please select an option to resolve the conflicts.");
+                                    return;
+                                }
+
+                                let fix = $('input[name="fixConflict"]:checked').val();
+
+                                $.ajax({
+                                    "url": "/Manage/ajax/showings/" + showId + "/movePerformance/process",
+                                    "method": "POST",
+                                    "data": {fixConflict:fix},
+                                    "success": function(result){
+
+                                        alert("Success. Page would now refresh.");
+
+                                    },
+                                    "error": function(err) {
+                                        alert("An error occurred. Check console.");
+                                    }
+                                });
+                            });
+
+                        },
+                        error: function(err) {
+                            if(err.status == 500) {
+                                alert("A server error occurred. Please try again later.");
+                                closeModal();
+                            } else {
+                                let r = JSON.parse(err.responseText);
+
+                                switch(r.error) {
+
+                                    case "invalid_param":
+                                        alert("An error occurred. Please try again later.");
+                                        break;
+
+                                    case "missing_param":
+                                        alert("An error occurred. Please try again later.");
+                                        break;
+
+                                    default:
+                                        alert("An error occurred. Please try again later.");
+                                        break;
+                                }
+                            }
+                        }
+                    });
+
+
+                })
+            }});
+
+    },
+
+    moveBooking: function(bookingId) {
+
+        showModal("Move Booking", "<h3 class='p-5 text-center'>Loading...</h3>", {"size":"lg", "vcenter":true});
 
         $.ajax({
             url:"/Manage/ajax/bookings/" + bookingId + "/movePerformance",

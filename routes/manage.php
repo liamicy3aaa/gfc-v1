@@ -1,6 +1,16 @@
 <?php
 
 $app->group("/Manage", function(){
+
+    $this->get("/test", function($request, $response, $args){
+
+        $cinema = $this->get("cinema");
+        $process = $cinema->validateSeatTransfer(63, 72);
+
+        print "<pre>"; print_r($process); print "</pre>";
+        exit;
+
+    });
     
     /** AJAX */
 
@@ -886,6 +896,195 @@ $app->group("/Manage", function(){
 
     });
 
+    $this->map(["GET", "POST"],"/ajax/showings/{id}/movePerformance[/{op}]", function($request, $response, $args){
+
+       // return file_get_contents("../templates/Manage/films/partial_move_performance_s2.phtml");
+
+        $user = $this->get("user");
+        $user->loginRequired();
+
+        $cinema = $this->get("cinema");
+
+        $op = ((isset($args["op"])) ? $args["op"] : "start");
+
+        switch($op) {
+
+            case "start":
+                if(!$request->isGet()) {
+
+                    return $response->withJson(array("status" => 400, "error" => "Operation must be called via GET"), 400);
+
+                }
+
+                $itemHtml = "";
+                $showInfo = $cinema->getShowInfo(cipher::decrypt($args["id"]));
+                $distancing = (($showInfo["social_distancing"] !== 0) ? true : false);
+                $showATotal = $cinema->getBookedSeats($showInfo["showId"], $distancing);
+                $showATotal = (count($showATotal["bookedSeats"]) + count($showATotal["blockedSeats"]));
+
+                $data = $cinema->getMovePerformanceShowings($showInfo["showId"], $showInfo["film_id"], array(
+                    "sameScreenOnly" => true,
+                    "minCapacity" => $showATotal
+                ));
+
+                if (count($data) < 1) {
+
+                    $itemHtml .= "<div class='container p-5 text-center text-secondary'><h5>No other performances available</h5></div>";
+
+                } else {
+
+                    $_SESSION["current_performance_id"] = $showInfo["showId"];
+
+                    foreach ($data as $id => $item) {
+
+                        $itemHtml .= $cinema->createPerformanceItem($item);
+
+                    }
+
+                }
+
+                $html = str_replace(array("{items}"),
+                    array($itemHtml),
+                    file_get_contents("../templates/Manage/bookings/partial_move_performance.phtml"));
+
+                return $response->withJson($html, 200);
+                break;
+
+            case "selected":
+
+                if(!$request->isPost()) {
+
+                    return $response->withJson(array("status" => 400, "error" => "Operation must be called via POST"), 400);
+
+                }
+
+                $postBody = $request->getParsedBody();
+
+                if(!isset($postBody["showId"])) {
+
+                    return $response->withJson(array("status" => 400, "error" => "missing_param"), 400);
+
+                }
+
+                $conflicts = $cinema->validateSeatTransfer($_SESSION["current_performance_id"], cipher::decrypt($postBody["showId"]));
+                $_SESSION["_temp"]["conflicts"] =  ((isset($conflicts["data"]["failed"])) ? $conflicts["data"]["failed"] : array());
+                $_SESSION["_temp"]["show_id"] = cipher::decrypt($postBody["showId"]);
+
+
+                $totalConflicts = ((isset($conflicts["data"]["failed"])) ? count($conflicts["data"]["failed"]) : 0);
+                $conflictColour = (($totalConflicts < 1) ? "success" : "danger");
+                $showA = $cinema->getShowInfo($_SESSION["current_performance_id"]);
+                $showB = $cinema->getShowInfo(cipher::decrypt($postBody["showId"]));
+                $distancing = (($showA["social_distancing"] !== 0) ? true : false);
+                $showATotal = count($cinema->getBookingsByShowtime($_SESSION["current_performance_id"]));
+                $hideConflict = (($totalConflicts < 1) ? "d-none" : "");
+
+                $html = str_replace(array("%SHOWINGA%", "%SHOWINGB%", "%TOTALBOOKINGS%", "%CONFLICTCOLOUR%", "%CONFLICTS%", "%HIDECONFLICT%"),
+                    array(
+                        date("d/m/Y H:i", $showA["time"]),
+                        date("d/m/Y H:i", $showB["time"]),
+                        $showATotal,
+                        $conflictColour,
+                        $totalConflicts,
+                        $hideConflict
+                    ),
+                    file_get_contents("../templates/Manage/films/partial_move_performance_s2.phtml"));
+
+                // Returning result
+
+                return $response->withJson(array("status"=>200, "html"=>$html), 200);
+                break;
+
+            case "process":
+                if(!$request->isPost()) {
+
+                    return $response->withJson(array("status" => 400, "error" => "Operation must be called via POST"), 400);
+
+                }
+
+                $postBody = $request->getParsedBody();
+
+                if(count($_SESSION["_temp"]["conflicts"]) >= 1) {
+
+                    if (!isset($postBody["fixConflict"])) {
+
+                        return $response->withJson(array("status" => 400, "error" => "missing_param"), 400);
+
+                    } elseif (!in_array($postBody["fixConflict"], array("ignore_conflicts", "move_conflicts"))) {
+
+                        return $response->withJson(array("status" => 400, "error" => "invalid_param"), 400);
+
+                    }
+                }
+
+
+                // loop through each validate booking and update information
+                $bookings = $cinema->getBookingsByShowtime($_SESSION["current_performance_id"]);
+                $processed = 0;
+                $change = array();
+                $update = array();
+                $ignored = array();
+
+                foreach($bookings as $id => $booking) {
+
+                    $conflictedBooking = in_array($booking["id"], $_SESSION["_temp"]["conflicts"]);
+
+                    if($postBody["fixConflict"] == "move_conflicts" && $conflictedBooking) {
+
+                        // Use algorithm to get new seats and then update the booking.
+                        $newSeats = $cinema->getNextAvailableSeats($booking["booking_reference"], $_SESSION["_temp"]["show_id"]);
+                        $newSeats = $newSeats["data"];
+
+                        $change[] = $booking["id"];
+
+                        $update = $cinema->updateBooking($booking["booking_reference"], array(
+                            "showtime_id" => $_SESSION["_temp"]["show_id"],
+                            "booking_seats" => $newSeats
+                        ));
+
+                    } else {
+
+                        // If item is conflicted, skip to the next booking
+                        if($conflictedBooking && $postBody["fixConflict"] = "ignore_conflicts") {
+                            $ignored[] = $booking["id"];
+                            continue;
+                        }
+
+                        // Update booking with the new show id.
+
+                        $update[] = $booking["id"];
+
+                        $update = $cinema->updateBooking($booking["booking_reference"], array(
+                            "showtime_id" => $_SESSION["_temp"]["show_id"]
+                        ));
+
+                    }
+                    $processed++;
+                }
+
+                // Update the old showing to be cancelled
+                $cinema->updateShowing($_SESSION["current_performance_id"], array(
+                    "status" => "cancelled"
+                ));
+
+                // Unset any session items that are no longer needed
+                unset($_SESSION["_tmp"]);
+                unset($_SESSION["current_performance_id"]);
+
+                return $response->withJson(array(
+                    "status" => 200,
+                    "processed" => $processed,
+                    "changed" => $change,
+                    "update" => $update,
+                    "ignored" => $ignored
+                ), 200);
+
+
+        }
+
+
+    });
+
     $this->map(["GET", "POST"],"/ajax/bookings/{id}/movePerformance[/{op}]", function($request, $response, $args){
 
         $user = $this->get("user");
@@ -941,7 +1140,16 @@ $app->group("/Manage", function(){
             $itemHtml = "";
             $bookingInfo = $cinema->getBookingInfo(cipher::decrypt($args["id"]));
 
-            $data = $cinema->getMovePerformanceShowings($bookingInfo["showtime_id"], $bookingInfo["film_id"]);
+            $data = $cinema->getMovePerformanceShowings($bookingInfo["showtime_id"], $bookingInfo["film_id"], array(
+                "sameScreenOnly" => true
+            ));
+
+            // Add an option to move seats on the same showing
+            $itemHtml .= $cinema->createPerformanceItem(array(
+                "show_id" => $bookingInfo["showtime_id"],
+                "title" => "Move seats in this showing",
+                "description" => "Allows you to move seats for the same performance."
+            ), "custom");
 
             if (count($data) < 1) {
 
@@ -952,17 +1160,7 @@ $app->group("/Manage", function(){
 
                 foreach ($data as $id => $item) {
 
-                    $itemHtml .= '<a class="MP-item list-group-item list-group-item-action my-1 ' . (($item["available"] < 1) ? "disabled bg-light" : "") . '" href="Javacript:void(0)" data-showid="' . cipher::encrypt($item["id"]) .'">';
-                    $itemHtml .= '<div class="d-flex w-100 py-1">';
-                    $itemHtml .= '<div class="col-8">';
-                    $itemHtml .= '<h5 class="mb-1">' . date("l jS F", $item["time"]) . '</h5>';
-                    $itemHtml .= '<small class="mb-1">' . date("g:ia", $item["time"]) . '</small>';
-                    $itemHtml .= '</div>';
-                    $itemHtml .= '<div class="col-4 justify-content-inbetween text-right">';
-                    $itemHtml .= '<small>' . (($item["available"] < 1) ? "SOLD OUT" : $item["available"] . " seats remaining") . '<br>Screen ' . $item["screen_name"] . '</small>';
-                    $itemHtml .= '</div>';
-                    $itemHtml .= '</div>';
-                    $itemHtml .= '</a>';
+                    $itemHtml .= $cinema->createPerformanceItem($item);
 
                 }
 
@@ -1003,10 +1201,15 @@ $app->group("/Manage", function(){
 
                 }
 
+                // Sorting social distancing
+                $info = $cinema->getShowInfo($show);
+                $blockedSeats = $cinema->seatingSocialDistancing($seats, $info["screen_id"]);
+
                 $update = $cinema->updateBooking($bookingInfo["booking_reference"], array(
                     "showtime_id" => $show,
                     "booking_seats" => $seats,
-                    "booking_ts" => time()
+                    "booking_ts" => time(),
+                    "social_distancing" => $blockedSeats
                 ));
 
                 $cinema->sendBookingConfirmation($bookingInfo["booking_reference"]);
@@ -1014,7 +1217,6 @@ $app->group("/Manage", function(){
                 notifications::add("success", "Booking successfully moved to a different performance.");
 
                 // Creating summary page
-                $info = $cinema->getShowInfo($show);
 
                 $summary = "";
 
@@ -1291,7 +1493,7 @@ $app->group("/Manage", function(){
         
         foreach($films as $index => $film) {
             
-            $activeShowings = $cinema->getShowtimesByFilm($film["id"], false);
+            $activeShowings = $cinema->getShowtimesByFilm($film["id"], array("includeData"=>false));
             
             $tableHtml .= "<tr " . (($film['film_status'] == 0) ? "class='bg-gray-100 text-gray-500'" : "") . ">";
             
@@ -1381,7 +1583,7 @@ $app->group("/Manage", function(){
 
                 $view = ((isset($_GET["view"])) ? ((in_array($_GET["view"], array("all"))) ? $_GET["view"] : "upcoming") : "upcoming");
 
-                $showtimes = $cinema->getShowtimesByFilm(cipher::decrypt($args["id"]), true, $view);
+                $showtimes = $cinema->getShowtimesByFilm(cipher::decrypt($args["id"]), array("includeData"=>true, "status"=>$view, "onlyActive" => false));
                 $getScreens = $cinema->getScreens();
                 $screens = array();
                 $html = "";
@@ -1396,13 +1598,22 @@ $app->group("/Manage", function(){
                                 
                     foreach($showtimes as $id => $show) {
                         
-                        $html .= "<tr>";
-                            $html .= "<td>" . date("d/m/Y H:i", $show["time"]) . "</td>"; 
+                        $html .= "<tr " . (($show["status"] !== "active") ? "class='bg-light'" : "") . ">";
+                            $html .= "<td>" . date("d/m/Y H:i", $show["time"]) . " " . (($show["status"] !== "active") ? "[" . $show["status"] . "]" : "") . "</td>";
                             $html .= "<td>Screen " . $screens[$show["screen_id"]]["screen_name"] . "</td>";
                             $html .= "<td>";
                                 
                                $html .= "<button class='btn btn-info m-1'>Edit</button>";
                                $html .= "<button class='btn btn-info' onclick='Cinema.getShowPlan(\"" . $args["id"] . "\",\"" . cipher::encrypt($show["id"]) ."\")'>View Plan</button>";
+                               $html .= "<div class=\"dropdown no-arrow d-inline-block\">
+                        <a class=\"btn btn-secondary dropdown-toggle m-1\" href=\"#\" role=\"button\" id=\"dropdownMenuLink\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\">
+                          <i class=\"fas fa-ellipsis-v fa-sm fa-fw text-gray-400\"></i>
+                        </a>
+                        <div class=\"dropdown-menu dropdown-menu-right shadow animated--fade-in\" aria-labelledby=\"dropdownMenuLink\">
+                          <div class=\"dropdown-header\">Options</div>
+                            <a class=\"dropdown-item\" href=\"#\" onclick=\"Cinema.movePerformance('" . cipher::encrypt($show["id"]) . "'); return false;\">Move Performance</a>
+                        </div>
+                  </div>";
                             
                             $html .= "</td>";
                         $html .= "</tr>";
@@ -2040,7 +2251,13 @@ $app->group("/Manage", function(){
 
     $this->get("/algotest", function($request, $response, $args){
 
-        function seatBlocker($selection, $seatingPlan, $space)
+        $cinema = $this->get("cinema");
+
+        $test = $cinema->getNextAvailableSeats("80Z0GH9Y", 72);
+
+        print "<pre>"; print_r($test); print "<pre>";
+        exit;
+        /*function seatBlocker($selection, $seatingPlan, $space)
         {
 
             // Step 1 - Get Get array positions for each seatId
@@ -2245,7 +2462,7 @@ $app->group("/Manage", function(){
 
         return $response->withJson($cinema->seatingSocialDistancing($userSelection1, $screen, $spacer), 200);
 
-       //print $cinema->getConfigItem("social_distancing")["value"];
+       //print $cinema->getConfigItem("social_distancing")["value"];*/
 
     });
 

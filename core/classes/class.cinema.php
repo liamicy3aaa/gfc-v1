@@ -477,7 +477,7 @@ class cinema {
         }
 
         // Check that the film doesn't have any active showings
-        if(($this->getShowtimesByFilm($filmId, false)) >= 1) {
+        if(($this->getShowtimesByFilm($filmId, array("includeData" => false))) >= 1) {
 
             return array("status" => false, "error" => "Cannot delete a film with an active showing");
 
@@ -603,7 +603,66 @@ class cinema {
 
     }
 
-    
+    public function updateShowing($showId, $data) {
+
+        $available = array(
+            "film_id",
+            "screen_id",
+            "date",
+            "time",
+            "status",
+            "ticket_config",
+            "special_requirements",
+            "social_distancing",
+            "sale_unlock"
+        );
+
+        $number = array(
+            "film_id",
+            "screen_id",
+            "time",
+            "sale_unlock"
+        );
+
+        $updateString = "";
+        $x = 0;
+        $total = count($data);
+
+        foreach($data as $column => $value) {
+
+            if(in_array($column, $available)) {
+
+                if(in_array($column, array("ticket_config"))){
+
+                    $val = "'" . json_encode($value) . "'";
+
+                } elseif(!in_array($column, $number)) {
+
+                    $val = "'" . $value . "'";
+
+                } else {
+
+                    $val = $value;
+
+                }
+
+                $updateString .= (($x >= 1 && $x !== $total) ? ",": "") . " " . $column . " = " . $val;
+
+                $x++;
+
+            }
+
+        }
+        $sql = "UPDATE gfc_films_showtimes SET$updateString WHERE id = ?";
+
+        $update = $this->conn->query($sql, $showId)->affectedRows();
+
+        return true;
+
+    }
+
+
+
     /**
     * Get film data
     * Get information about a film
@@ -975,9 +1034,15 @@ class cinema {
         
     }
 
-    public function getMovePerformanceShowings($show, $film) {
+    public function getMovePerformanceShowings($show, $film, $settings = array()) {
 
-        $q1 = "SELECT a.*, c.screen_name, count(d.id) as screen_seats FROM gfc_films_showtimes as a INNER JOIN gfc_screens as c ON a.screen_id = c.id inner JOIN gfc_screens_seats as d ON c.id = d.screen_id WHERE NOT a.id = ? AND a.film_id = ? AND a.time >= ? GROUP BY a.id";
+        // Applying settings
+        $showInfo = $this->getShowInfo($show);
+        $sameScreenOnly = ((isset($settings["sameScreenOnly"]) && $settings["sameScreenOnly"] === true) ? "AND d.screen_id = " . $showInfo["screen_id"] . "" : "");
+        $minCapacity = ((isset($settings["minCapacity"])) ? $settings["minCapacity"] : false);
+
+        // Queries
+        $q1 = "SELECT a.*, c.screen_name, count(d.id) as screen_seats FROM gfc_films_showtimes as a INNER JOIN gfc_screens as c ON a.screen_id = c.id inner JOIN gfc_screens_seats as d ON c.id = d.screen_id WHERE NOT a.id = ? AND a.film_id = ? AND a.time >= ? $sameScreenOnly GROUP BY a.id";
         $q2 = "SELECT count(booking_seats_total) as 'records', sum(booking_seats_total) as 'booked_seats' FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (\"PAID\", \"RESERVED\")";
 
         $r1 = $this->conn->query($q1, $show, $film, time())->fetchAll();
@@ -986,11 +1051,17 @@ class cinema {
 
         foreach($r1 as $id => $item) {
 
-            $data[$item["id"]] = $item;
 
             $r2 = $this->conn->query($q2, $item["id"])->fetchArray();
 
-            $data[$item["id"]]["available"] =  (($r2["records"] >= 1) ? ($item["screen_seats"] - $r2["booked_seats"]) : $item["screen_seats"]);
+            $available = (($r2["records"] >= 1) ? ($item["screen_seats"] - $r2["booked_seats"]) : $item["screen_seats"]);
+
+            if($minCapacity !== false && $available < $minCapacity) {
+                continue;
+            }
+
+            $data[$item["id"]] = $item;
+            $data[$item["id"]]["available"] = $available;
 
         }
 
@@ -1003,6 +1074,45 @@ class cinema {
         
         return $this->conn->query("SELECT a.*, b.film_name FROM gfc_bookings AS a INNER JOIN gfc_films AS b ON a.film_id = b.id")->fetchAll();
         
+    }
+
+    public function getBookingsByEmail($email, $time = false) {
+
+        if($time !== false) {
+
+            $additional = "AND booking_ts >= $time";
+
+        }
+
+        return $this->conn->query("SELECT a.*, b.film_name, b.film_thumbnail, c.time FROM gfc_bookings AS a INNER JOIN gfc_films AS b ON a.film_id = b.id INNER JOIN gfc_films_showtimes AS c ON a.showtime_id = c.id WHERE a.booking_email = '$email' $additional ORDER BY c.time DESC")->fetchAll();
+
+    }
+
+    public function getBookingsByShowtime($show) {
+
+        // Get show information
+        $details = $this->getShowInfo($show);
+
+        if(!$details) {
+            die("INVALID SHOWID 1");
+        }
+
+        $validStatuses = implode(",", array(
+            "'reserved'",
+            "'reserved_temp'",
+            "'complete'",
+            "'awaiting_payment'",
+            "'GFC_ADMIN'",
+            "'PAID'"
+        ));
+
+        //die("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . "");
+        // STEP 1 - Get all bookings that hold tickets for this showing
+
+        $result = $this->conn->query("SELECT * FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . ")", $details["showId"])->fetchAll();
+
+        return $result;
+
     }
     
     /**
@@ -1270,21 +1380,51 @@ class cinema {
 
     }
 
-    public function getShowtimesByDate($date) {
+    public function getShowtimesByDate($date, $activeOnly = true) {
 
-        $r = $this->conn->query("SELECT a.*, b.screen_name as 'screen_name', c.film_name as 'film_name', c.film_runtime as 'runtime' FROM gfc_films_showtimes as a INNER JOIN gfc_screens as b ON a.screen_id = b.id INNER JOIN gfc_films as c ON a.film_id = c.id WHERE date = ?", $date)->fetchAll();
+            // List all available showtimes by film id
+            $active = (($activeOnly) ? "AND a.status = 'active'" : "");
 
-        return $r;
+            $times = $this->conn->query("SELECT a.id, a.film_id, a.date, a.time FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE date = ? $active ORDER BY time ASC", $date)->fetchAll();
+
+            $data2 = array();
+            $filmIds = array();
+
+            if(count($times) < 1) {
+
+                return false;
+
+            }
+
+            foreach($times as $index => $time) {
+
+                if(!isset($data2[$time["film_id"]])) {
+
+                    $data2[$time["film_id"]] = array();
+
+                }
+
+                $data2[$time["film_id"]][] = $time;
+                $filmIds[] = $time["film_id"];
+
+
+            }
+
+            $data2["_films"] = $filmIds;
+
+            return $data2;
 
     }
     
-    public function getShowtimesByScreen($screenId, $includeData = true) {
+    public function getShowtimesByScreen($screenId, $includeData = true, $activeOnly) {
         
         $time = time();
         
         $columns = (($includeData) ? "*" : "count(id) as 'total'");
-        
-        $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE screen_id = ? AND time >= ? ORDER BY time ASC", $screenId, $time);    
+        $active = (($activeOnly) ? "AND status = 'active'" : "");
+
+
+        $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE screen_id = ? AND time >= ? $active ORDER BY time ASC", $screenId, $time);
         
         if($includeData) {
             
@@ -1297,23 +1437,24 @@ class cinema {
         }
     }
     
-    public function getShowtimesByFilm($filmId, $includeData = true, $status = "upcoming") {
+    public function getShowtimesByFilm($filmId, $settings = array()) {
         
         $time = time();
         
-        $columns = (($includeData) ? "*" : "count(id) as 'total'");
+        $columns = (($settings["includeData"]) ? "*" : "count(id) as 'total'");
+        $onlyActive = ((!isset($settings["onlyActive"]) || $settings["onlyActive"] === true) ? " AND status = 'active'" : "");
 
-        if($status == "all") {
+        if($settings["status"] == "all") {
 
-            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? ORDER BY time ASC", $filmId);
+            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? $onlyActive ORDER BY time ASC", $filmId);
 
         } else {
 
-            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? AND time >= ? ORDER BY time ASC", $filmId, $time);
+            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? AND time >= ? $onlyActive ORDER BY time ASC", $filmId, $time);
 
         }
 
-        if($includeData) {
+        if($settings["includeData"]) {
             
             return $query->fetchAll();
             
@@ -1324,24 +1465,30 @@ class cinema {
         }
     }
 
-    public function getShowtimes($id = false, $onlyActive = false, $limit = false, $unique = false) {
+    public function getShowtimes($id = false, $settings = array()) {
+
+        if(empty($settings)) {
+            $settings = array(
+                "activeFilms" => true,
+                "activeShowings" => true
+            );
+        }
 
         $time = time();
-        $limit = (($limit !== false) ? " LIMIT $limit" : "");
-        $active = (($onlyActive === true) ? "AND b.film_status = 1" : "");
+        $limit = ((isset($settings["limit"]) && $settings["limit"] !== false) ? " LIMIT " . $settings["limit"] . "" : "");
+        $activeFilms = ((isset($settings["activeFilms"]) && $settings["activeFilms"] === true) ? "AND b.film_status = 1" : "");
+        $activeShowings = ((isset($settings["activeShowings"]) && $settings["activeShowings"] === true) ? "AND a.status = 'active'" : "");
         
         if($id !== false) {
             
             // List show times for a specific film
-            $times = $this->conn->query("SELECT a.* FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.film_id = ? AND a.time > ? $active ORDER BY time ASC $limit", $id, $time)->fetchAll();
-            
-            return $times;
+            return $this->conn->query("SELECT a.* FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.film_id = ? AND a.time > ? $activeFilms $activeShowings ORDER BY time ASC $limit", $id, $time)->fetchAll();
             
         } else {
             
             // List all available showtimes by film id
             
-            $times = $this->conn->query("SELECT a.id, a.film_id, a.date, a.time FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.`time` > ? $active ORDER BY time ASC $limit", $time)->fetchAll();
+            $times = $this->conn->query("SELECT a.id, a.film_id, a.date, a.time FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.`time` > ? $activeFilms $activeShowings ORDER BY time ASC $limit", $time)->fetchAll();
             
             $data = array();
             $filmIds = array();
@@ -1719,6 +1866,48 @@ class cinema {
                         
         }
         
+    }
+
+    public function createPerformanceItem($data, $type = "default") {
+
+        $itemHtml = "";
+
+        switch($type) {
+
+            case "default":
+                $itemHtml .= '<a class="MP-item list-group-item list-group-item-action my-1 ' . (($data["available"] < 1) ? "disabled bg-light" : "") . '" href="javacript:void(0);" data-showid="' . cipher::encrypt($data["id"]) .'">';
+                $itemHtml .= '<div class="d-flex w-100 py-1">';
+                $itemHtml .= '<div class="col-8">';
+                $itemHtml .= '<h5 class="mb-1">' . date("l jS F", $data["time"]) . '</h5>';
+                $itemHtml .= '<small class="mb-1">' . date("g:ia", $data["time"]) . '</small>';
+                $itemHtml .= '</div>';
+                $itemHtml .= '<div class="col-4 justify-content-inbetween text-right">';
+                $itemHtml .= '<small>' . (($data["available"] < 1) ? "SOLD OUT" : $data["available"] . " seats remaining") . '<br>Screen ' . $data["screen_name"] . '</small>';
+                $itemHtml .= '</div>';
+                $itemHtml .= '</div>';
+                $itemHtml .= '</a>';
+                break;
+
+            case "custom":
+                $itemHtml .= '<a class="MP-item list-group-item list-group-item-action my-1 bg-light" href="Javacript:void(0)" data-showid="' . cipher::encrypt($data["show_id"]) .'">';
+                $itemHtml .= '<div class="d-flex w-100 py-1">';
+                $itemHtml .= '<div class="col-8">';
+                $itemHtml .= '<h5 class="mb-1">' . $data["title"] . '</h5>';
+                $itemHtml .= '<small class="mb-1">' . $data["description"] . '</small>';
+                $itemHtml .= '</div>';
+                $itemHtml .= '</div>';
+                $itemHtml .= '</a>';
+                break;
+
+            default:
+                $itemHtml .= "<h5>INVALID DATA FOR FILM ITEM</h5>";
+                break;
+
+        }
+
+        return $itemHtml;
+
+
     }
     
     public function buildTicketScreen($types = false) {
@@ -2162,6 +2351,69 @@ class cinema {
         }
 
         return false;
+
+    }
+
+    public function getBookedSeats($showtimeId, $includeDistancing = true) {
+
+        // Get show information
+        $details = $this->getShowInfo($showtimeId);
+
+        if(!$details) {
+            print "<h1>ERROR ($showtimeId)</h1><br/><hr/><pre>"; print_r($details); print "</pre>";
+            exit;
+        }
+
+        $validStatuses = implode(",", array(
+            "'reserved'",
+            "'reserved_temp'",
+            "'complete'",
+            "'awaiting_payment'",
+            "'GFC_ADMIN'",
+            "'PAID'"
+        ));
+
+        //die("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . "");
+        // STEP 1 - Get all bookings that hold tickets for this showing
+
+        $socialDistancing = (($details["social_distancing"] == 1 && $includeDistancing === true) ? true : false);
+
+        $items = (($socialDistancing) ? "id, booking_seats, social_distancing" : "id, booking_seats");
+
+        $result = $this->conn->query("SELECT $items FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . ")", $details["showId"])->fetchAll();
+
+        // STEP 2 - Combine all seat ids from the bookings
+        $bookedSeats = array();
+        $blockedSeats = array();
+
+        foreach($result as $index => $booking) {
+
+            $seats = json_decode($booking["booking_seats"], true);
+
+            foreach($seats as $seat) {
+
+                $bookedSeats[] = $seat;
+
+            }
+
+            if($socialDistancing) {
+
+                $seats2 = json_decode($booking["social_distancing"], true);
+
+                foreach($seats2 as $seat2) {
+
+                    $blockedSeats[] = $seat2;
+
+                }
+
+            }
+
+        }
+
+        return array(
+            "blockedSeats" => $blockedSeats,
+            "bookedSeats" => $bookedSeats
+        );
 
     }
 
@@ -2722,6 +2974,293 @@ class cinema {
 
         // Return the ids that should be blocked to the caller.
         return $blockedSeats;
+    }
+
+    public function validateSeatTransfer($currentShow, $nextShow) {
+
+        // step 1 - Get current taken seats of the current show
+        $oldShow = $this->getShowInfo($currentShow);
+        $newShow = $this->getShowInfo($nextShow);
+
+        if(!$oldShow || !$newShow) {
+            return array(
+                "status" => false,
+                "error" => "invalid_show",
+                "error_desc" => "Invalid showing id provided."
+            );
+        }
+
+        if($oldShow["screen_id"] !== $newShow["screen_id"]) {
+            return array(
+                "status" => false,
+                "error" => "screen_mismatch",
+                "error_desc" => "A showing can only be transferred to another showing in the same screen."
+            );
+        }
+
+        $oldBookings = $this->getBookingsByShowtime($currentShow);
+        $newTakenSeats = $this->getBookedSeats($nextShow);
+        $failed = array();
+        $success = array();
+
+        foreach($oldBookings as $id => $oldBooking) {
+
+            $check = true;
+
+            $seats = json_decode($oldBooking["booking_seats"], true);
+
+
+            foreach($seats as $seat) {
+
+                if(in_array($seat, $newTakenSeats["bookedSeats"]) || in_array($seat, $newTakenSeats["blockedSeats"])) {
+                    $check = false;
+                }
+
+            }
+
+            if(!$check) {
+                $failed[] = $oldBooking["id"];
+            } else {
+                $success[] = $oldBooking["id"];
+            }
+
+        }
+
+        if(count($failed) >= 1) {
+            return array(
+                "status" => false,
+                "error" => "booking_conflicts",
+                "error_desc" => "One or more conflicting bookings.",
+                "data" => array(
+                    "success" => $success,
+                    "failed" => $failed
+            )
+            );
+        } else {
+            return array(
+                "status" => true
+            );
+        }
+
+    }
+
+    /**
+     * @param $bookingId
+     * @param $showing - ID of the new showing
+     * @return array
+     */
+
+    public function getNextAvailableSeats($bookingId, $showing) {
+
+        // Step 1 - Get the seats from the current booking and the booked seats of the showing
+        $bookingInfo = $this->getBookingInfo($bookingId);
+        $showInfo = $this->getShowInfo($showing); // Id of the new showing
+        $bookedSeats = $this->getBookedSeats($showing, (($showInfo["social_distancing"] == 1) ? true : false));
+        $bookedSeats = array_merge($bookedSeats["bookedSeats"], $bookedSeats["blockedSeats"]);
+
+
+
+        // Step 2 - build a seating plan
+        $result = $this->conn->query("SELECT id, seat_row as 'row', seat_number FROM gfc_screens_seats WHERE id IN(" . implode(",", json_decode($bookingInfo["booking_seats"], true)) . ")")->fetchAll();
+        $allSeats = $this->conn->query("SELECT * FROM gfc_screens_seats WHERE screen_id = " . $showInfo["screen_id"] . " AND seat_status = 1")->fetchAll();
+        $seatingPlan = array();
+
+        foreach($allSeats as $index => $seat) {
+
+            if(!isset($seatingPlan[$seat["seat_row"]])) {
+
+                $seatingPlan[$seat["seat_row"]] = array();
+
+            }
+
+            $seatingPlan[$seat["seat_row"]][] = $allSeats[$index];
+
+        }
+        ksort($seatingPlan);
+
+        // Step 3 - Go through the plan to find free seats.
+        $numRows = count($seatingPlan);
+        $startRow = $result[0]["row"];
+        $RowUpIndex = $result[0]["row"] - 1;
+        $RowDownIndex = $result[0]["row"] + 1;
+        $testData = array();
+
+        // Data stores
+        $validRows = array();
+        $freeRows = array();
+        $freeSeats = array();
+        $rowUpStop = false;
+        $rowDownStop = false;
+
+        // Loop through the total number of rows for the screen
+        for($i = 1; $i < $numRows; $i++) {
+
+            // Only run the first time
+                if($i == 1) {
+                    $startCounter = 0;
+                    foreach($seatingPlan[$startRow] as $id => $seat) {
+
+                        // If seat isn't taken add it to the freeSeats array
+                        if(!in_array($seat["id"], $bookedSeats)) {
+                            $testData[$seat["id"]] = "FALSE";
+
+                            $freeSeats[$startRow][] = $seat;
+                            $startCounter++;
+                        } else {
+                            $testData[$seat["id"]] = "TRUE";
+                        }
+
+                        // If the row has the required number of seats for the booking, add it to $validRows and break out the loop.
+                        if($startCounter >= $bookingInfo["booking_seats_total"]) {
+                            $validRows[$startRow] = $bookingInfo["booking_seats_total"];
+                            break;
+                        }
+
+                    }
+
+                    // If the row has some free seats but not enough for the booking, save it to $freeRows so we have it for later.
+                    if($bookingInfo["booking_seats_total"] < $startCounter && $startCounter >= 1) {
+                        $freeRows[$startRow] = $startCounter;
+                    }
+                }
+
+                // Checking up row
+                if(isset($seatingPlan[$RowUpIndex])) {
+
+                    $RowUpCounter = 0;
+                    foreach($seatingPlan[$RowUpCounter] as $id => $seat) {
+
+                        // If seat isn't taken add it to the freeSeats array
+                        if (!in_array($seat["id"], $bookedSeats)) {
+                            $freeSeats[$RowUpCounter][] = $seat;
+                            $RowUpCounter++;
+                        }
+
+                        // If row meets the required number of seats for booking, add it to $validRows and break; out the loop.
+                        if ($RowUpCounter >= $bookingInfo["booking_seats_total"]) {
+                            $validRows[$RowUpIndex] = $bookingInfo["booking_seats_total"];
+                            break;
+                        }
+
+                    }
+
+                    // If the row has some free seats but not enough for the booking, save it to $freeRows so we have it for later.
+                    if($bookingInfo["booking_seats_total"] < $RowUpCounter && $RowUpCounter >= 1) {
+                        $freeRows[$RowUpIndex] = $RowUpCounter;
+                    }
+
+                    $RowUpIndex--;
+
+                }
+
+            // Checking down row
+            if(isset($seatingPlan[$RowDownIndex])) {
+
+                $RowDownCounter = 0;
+                foreach($seatingPlan[$RowDownIndex] as $id => $seat) {
+
+                    // If seat isn't taken add it to the freeSeats array
+                    if (!in_array($seat["id"], $bookedSeats)) {
+                        $freeSeats[$RowDownIndex][] = $seat;
+                        $RowDownCounter++;
+                    }
+
+                    // If row meets the required number of seats for booking, add it to $validRows and break; out the loop.
+                    if ($RowDownCounter >= $bookingInfo["booking_seats_total"]) {
+                        $validRows[$RowDownIndex] = $bookingInfo["booking_seats_total"];
+                        break;
+                    }
+
+                }
+
+                // If the row has some free seats but not enough for the booking, save it to $freeRows so we have it for later.
+                if($bookingInfo["booking_seats_total"] < $RowDownCounter && $RowDownCounter >= 1) {
+                    $freeRows[$RowDownIndex] = $RowDownCounter;
+                }
+
+                $RowDownIndex++;
+
+            }
+
+            // If both have reached the end break out of the loop;
+            if($rowDownStop && $rowUpStop) {
+                break;
+            }
+
+        }
+
+        // Now check if there are any valid rows from the checks
+        if(count($validRows) >= 1) {
+
+            // Getting the closest valid row to the original booking row
+            $search = $result[0]["row"];
+            $closest = null;
+            foreach ($validRows as $id => $item) {
+                if ($closest === null || abs($search - $closest) > abs($id - $search)) {
+                    $closest = $id;
+                }
+            }
+
+            $newSeats = array();
+
+            for($x = 0; $x < $bookingInfo["booking_seats_total"]; $x++) {
+
+                $newSeats[] = $seatingPlan[$closest][($x)]["id"];
+
+            }
+
+            return array(
+                "status" => true,
+                "result" => $newSeats
+            );
+
+        }
+
+        // If there aren't any valid rows then get the id of the row with the most free seats.
+        $MostFreeSeats = max($freeRows);
+        $remainingSeats = $bookingInfo["booked_seats_total"];
+        $newSeats = array();
+        $up = true;
+        $down = true;
+        $upIndex = $MostFreeSeats[0];
+        $downIndex = $MostFreeSeats[0];
+
+        $newSeats[] = array_column($freeSeats[$MostFreeSeats[0]], "id");
+        $remainingSeats -= $freeRows[$MostFreeSeats[0]];
+
+        // Loop through each row going up and down from the highest row to fill the required amount of seats for the booking.
+        foreach($freeRows as $id => $amount) {
+
+            // If this row has more than enough seats left to cover the booking, only add the required number of seats to the booking and break out the loop.
+            if($remainingSeats < $amount){
+                $new = array_splice(array_column($freeSeats[$id], "id"), 0, ($remainingSeats - 1));
+
+                foreach($new as $seat) {
+                    $newSeats[] = $seat;
+                }
+
+                $remainingSeats -= $remainingSeats;
+
+            } else {
+
+                $new = array_column($freeSeats[$upIndex], "id");
+
+                foreach($new as $seat) {
+                    $newSeats[] = $seat;
+                }
+
+                $remainingSeats -= $freeRows[$id];
+            }
+
+            // Stop the loop once the required number of seats has been reached.
+            if($remainingSeats == 0) {
+                break;
+            }
+
+        }
+
+        return $newSeats;
+
     }
     
     public function availableSeats($show) {

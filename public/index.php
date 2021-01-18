@@ -22,7 +22,12 @@ include "../routes/settings.php";
 $app->get('/', function (Request $request, Response $response, array $args) {
 
     $cinema = $this->get("cinema");
-    $r = $cinema->getShowtimes(); //getFilmsByReleaseDate(((isset($_GET["mon"])) ? $_GET["mon"]: 8), 2019);
+    $r = $cinema->getShowtimes(false, array(
+        "activeFilms" => true,
+        "activeShowings" => true
+    )); //getFilmsByReleaseDate(((isset($_GET["mon"])) ? $_GET["mon"]: 8), 2019);
+
+
 
     if($r === false) {
 

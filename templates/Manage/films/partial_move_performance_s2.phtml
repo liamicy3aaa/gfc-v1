@@ -1,0 +1,57 @@
+<div class="card shadow p-1 mb-3 bg-white rounded">
+    <div class="card-body pb-1">
+        <h5 class="font-weight-bold">Summary</h5>
+        <ul>
+            <li>Moving %SHOWINGA% to %SHOWINGB%.</li>
+            <li>%TOTALBOOKINGS% bookings will be transferred.</li>
+            <li>There are <span class="badge badge-pill badge-%CONFLICTCOLOUR%">%CONFLICTS%</span> booking conflicts.</li>
+        </ul>
+    </div>
+</div>
+<div class="card shadow p-1 mb-3 bg-white rounded %HIDECONFLICT%">
+    <div class="card-body pb-1">
+        <h5 class="font-weight-bold">Resolve Conflicts</h5>
+        <p>There are <span class="badge badge-pill badge-%CONFLICTCOLOUR%">%CONFLICTS%</span> booking conflicts meaning seats booked in the original showing are already taken in the new showing.
+        <div class="form-group">
+            <h6>Options <span class="text-danger">*</span> </h6>
+            <div class="custom-control custom-radio">
+                <input name="fixConflict" type="radio" class="custom-control-input" id="fixConflicts2" value="ignore_conflicts">
+                <label class="custom-control-label" for="fixConflicts2"> Ignore conflicted bookings.</label>
+            </div>
+            <div class="custom-control custom-radio">
+                <input name="fixConflict" type="radio" class="custom-control-input" id="fixConflicts1" value="move_conflicts">
+                <label class="custom-control-label" for="fixConflicts1"> Move conflicted bookings to next available seats.</label>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card shadow p-1 mb-3 bg-white rounded">
+    <div class="card-body pb-1">
+        <h5 class="font-weight-bold" style="color:#c1c1c1;">Notify Customers [Coming soon]</h5>
+        <div class="custom-control custom-switch d-none">
+            <input type="checkbox" name="firstColumn" class="custom-control-input" id="notifyCustomers">
+            <label class="custom-control-label text-center" for="notifyCustomers">Inform customers of booking changes.</label>
+        </div>
+        <div id="notifyIsChecked" class="mt-1" style="display:none;">
+            <textarea class="form-control" placeholder="Optional explanation..."></textarea>
+            <small>Use <span class="font-weight-bold">%NEW%</span> to insert the new showing time. Use <span class="font-weight-bold">%FILM%</span> to insert the film name.</small>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <button class="btn btn-info m-2 MP-back">< Go back</button>
+    </div>
+    <div class="col">
+        <button id="startTransfer" class="btn btn-success btn-block m-2" data-conflicts="%CONFLICTS%">Transfer ></button>
+    </div>
+</div>
+<script>
+    $("#notifyCustomers").on("change", function(){
+        if($("#notifyCustomers:checked").length == 0) {
+            $("#notifyIsChecked").hide();
+        } else {
+            $("#notifyIsChecked").show();
+        }
+    });
+</script>

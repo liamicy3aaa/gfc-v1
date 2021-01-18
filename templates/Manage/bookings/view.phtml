@@ -19,7 +19,7 @@
                           <a class="dropdown-item" href="#">Edit Details</a>
                           <a class="dropdown-item" href="#" onclick="Cinema.resendConfirmationEmail('get', '<?php print $data['bookingId'];?>');">Resend Confirmation Email</a>
                           <?php if($data["booking"]["booking_status"] != "cancelled") {?>
-                              <a class="dropdown-item" href="Javascript:void(0)" onclick="Cinema.movePerformance('<?php print $data["bookingId"];?>');">Move performance</a>
+                              <a class="dropdown-item" href="Javascript:void(0);" onclick="Cinema.moveBooking('<?php print $data["bookingId"];?>');">Move Booking</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item text-danger" onclick="Cinema.cancelBooking('<?php print $data["bookingId"];?>');" href="#">Cancel Booking</a>
                             <?php } ?>
