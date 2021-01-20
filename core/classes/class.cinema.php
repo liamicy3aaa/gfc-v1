@@ -12,6 +12,7 @@ class cinema {
     protected $config;
     protected $conn;
     protected $seatingSizes = array("1" => "standard", "2" => "double", "50" => "standard", "99" => "space");
+    protected $emailQueue;
     
     /**
     * Constructor
@@ -24,7 +25,7 @@ class cinema {
         
         $this->config = $config;
         $this->conn = $database;
-        
+        $this->emailQueue = new emailQueue($database, $this);
 
     }
 
@@ -901,7 +902,7 @@ class cinema {
         // Clean item
         $showId = $this->conn->conn()->real_escape_string($id);
         
-        $show = $this->conn->query("SELECT *, b.id AS 'showId', b.screen_id, b.time AS 'showtime', c.screen_name, b.`ticket_config`, b.sale_unlock as 'show_unlock' FROM gfc_films AS a INNER JOIN gfc_films_showtimes AS b ON a.id = b.film_id INNER JOIN gfc_screens AS c ON b.screen_id = c.id WHERE b.id = ?", $showId)->fetchArray();
+        $show = $this->conn->query("SELECT *, b.id AS 'showId', b.screen_id, b.time AS 'showtime', c.screen_name, b.`ticket_config`, b.sale_unlock as 'show_unlock', b.status AS 'showStatus' FROM gfc_films AS a INNER JOIN gfc_films_showtimes AS b ON a.id = b.film_id INNER JOIN gfc_screens AS c ON b.screen_id = c.id WHERE b.id = ?", $showId)->fetchArray();
         
         if(count($show) >= 1) {
             $show["ticket_config"] = json_decode($show["ticket_config"], true);
@@ -1113,7 +1114,7 @@ class cinema {
         //die("SELECT id, booking_seats FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . "");
         // STEP 1 - Get all bookings that hold tickets for this showing
 
-        $result = $this->conn->query("SELECT * FROM gfc_bookings WHERE showtime_id = ? AND booking_status IN (" . $validStatuses . ")", $details["showId"])->fetchAll();
+        $result = $this->conn->query("SELECT a.*, b.film_name, b.film_thumbnail, c.time, c.screen_id FROM gfc_bookings AS a INNER JOIN gfc_films AS b ON a.film_id = b.id INNER JOIN gfc_films_showtimes AS c ON a.showtime_id = c.id WHERE a.showtime_id = ? AND a.booking_status IN (" . $validStatuses . ")", $details["showId"])->fetchAll();
 
         return $result;
 
@@ -1236,15 +1237,11 @@ class cinema {
         $cinemaInfo = $this->getCinemaInfo();
         $showInfo = $this->getShowInfo($booking_id["showtime_id"]);
         $transactionInfo = $this->conn->query("SELECT * FROM gfc_transactions WHERE booking_id = ?", $booking_id["id"])->fetchArray();
+        $recipient = array(
+            "name" => $booking_id["booking_name"],
+            "email" => $booking_id["booking_email"]
+        );
 
-        // send confirmation email
-        $email = new email($this);
-
-        $email->setTemplate("booking_cancellation");
-
-        $email->addRecipient($booking_id["booking_email"], $booking_id["booking_name"]);
-
-        $email->setSubject("Booking cancelled: $bookingId");
 
         // Getting seat Ids
         $seats = $this->getSeatingInfo(json_decode($booking_id["booking_seats"], true));
@@ -1279,8 +1276,7 @@ class cinema {
         // Splitting card info
         $card = explode(":", $transactionInfo["payment_type"]);
 
-
-        $email->addContent(array(
+        $email = $this->emailQueue->add($recipient, "booking_cancellation", "Booking cancelled: $bookingId", array(
             "%CINEMA%" => $cinemaInfo["name"],
             "%TIME%" => date("l jS F H:i:s", time()),
             "%SHOWTIME%" => date("l jS F H:i", $showInfo["time"]),
@@ -1295,10 +1291,12 @@ class cinema {
             "%COST%" => money_format("%i", $booking_id["booking_total"])
         ));
 
-        $email->send();
+        if(!$email["status"]){
+            http_response_code(400);
+            print "<pre>"; print_r($email); print "</pre>";
+            exit;
+        }
 
-
-        
         //$this->conn->query("DELETE FROM gfc_bookings WHERE booking_reference = ?", $bookingId);
         
         return true;  
@@ -1320,23 +1318,23 @@ class cinema {
         $cinemaInfo = $this->getCinemaInfo();
         $showInfo = $this->getShowInfo($booking_id["showtime_id"]);
         $transaction = $this->conn->query("SELECT * FROM gfc_transactions WHERE booking_id = ? LIMIT 1", $booking_id["id"])->fetchArray();
-
-        // send confirmation email
-        $email = new email($this);
-
-        $email->setTemplate("booking_confirmation");
+        $recipient = array();
 
         if($contact !== false) {
 
-            $email->addRecipient($contact);
+            $recipient = array(
+                "email" => $contact,
+                "name" => ""
+            );
 
         } else {
 
-            $email->addRecipient($booking_id["booking_email"], $booking_id["booking_name"]);
+            $recipient = array(
+                "email" => $booking_id["booking_email"],
+                "name" => $booking_id["booking_name"]
+            );
 
         }
-
-        $email->setSubject("Booking confirmed: $id");
 
         // Getting seat Ids
         $seats = $this->getSeatingInfo(json_decode($booking_id["booking_seats"], true));
@@ -1353,7 +1351,8 @@ class cinema {
         $card = explode(":", $transaction["payment_type"]);
 
         setlocale(LC_MONETARY,"en");
-        $email->addContent(array(
+
+        $email = $this->emailQueue->add($recipient, "booking_confirmation", "Booking confirmed: $id", array(
             "%CINEMA%" => $cinemaInfo["name"],
             "%TIME%" => date("l jS F H:i:s", $booking_id["booking_ts"]),
             "%SHOWTIME%" => date("l jS F H:i", $showInfo["time"]),
@@ -1367,18 +1366,11 @@ class cinema {
             "%COST%" => money_format("%i", $booking_id["booking_total"])
         ));
 
-        /*
-        $html = "Hello " . $booking_id["booking_name"] . ",<br/>";
-        $html .= "Thanks for booking to see " . $filmInfo[0]["film_name"] . ".<br/><br/>";
-        $html .= "Your booking reference is <span style='font-weight:bold'>" . $id . "</span> which you can use to collect your tickets when you arrive at the venue.";
-        $html .= "<br/><br/>Kind regards, GFC Cinemas";
-
-
-        $email->addContent(array(
-            "%CONTENT%" => $html
-        ));*/
-
-        $email->send();
+        if(!$email["status"]){
+            http_response_code(400);
+            print "<pre>"; print_r($email); print "</pre>";
+            exit;
+        }
 
         return true;
 
@@ -3220,10 +3212,7 @@ class cinema {
 
             }
 
-            return array(
-                "status" => true,
-                "result" => $newSeats
-            );
+            return $newSeats;
 
         }
 

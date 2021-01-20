@@ -642,29 +642,28 @@ class user {
 
         }
 
-        $userEmail = $userInfo["data"]["user_email"];
-        $userName = $userInfo["data"]["user_name"];
+        $recipient = array(
+            "email" => $userInfo["data"]["user_email"],
+            "name" => $userInfo["data"]["user_name"]
+        );
 
         $secret = $this->generateResetCode($userId);
         $cinemaName = $cinema->getCinemaInfo();
         $cinemaName = $cinemaName["name"];
+        $emailQueue = new emailQueue($this->conn, $cinema);
 
-        $email = new email($cinema);
-        $email->setTemplate("reset-password");
-        $email->setSubject("Reset Password");
-        $email->addRecipient($userEmail, $userName);
-        $email->addContent(array(
+        $email = $emailQueue->add($recipient, "reset-password", "Reset Password", array(
             "%RESETLINK%" => "https://" . $_SERVER['HTTP_HOST'] . "/auth/reset-password/$secret",
             "%CINEMANAME%" => $cinemaName
         ));
 
-        $emailSent =  $email->send();
-
-        if(!$emailSent["status"] && $emailSent["error"] !== null) {
-            return $emailSent;
-        } else {
-            return array("status" => true);
+        if(!$email["status"]){
+            http_response_code(400);
+            print "<pre>"; print_r($email); print "</pre>";
+            exit;
         }
+
+        return array("status" => true);
 
     }
     

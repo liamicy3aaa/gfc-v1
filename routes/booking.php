@@ -838,7 +838,7 @@ $app->group("/booking", function(){
 
         }
 
-        if($showInfo["film_status"] !== 1 || $showInfo["status"] !== "active") {
+        if($showInfo["film_status"] !== 1 || $showInfo["showStatus"] !== "active") {
 
             notifications::add("danger", "Ticket sales for this showing have been suspended", array("dismiss"=>false));
             $user->redirect("/");

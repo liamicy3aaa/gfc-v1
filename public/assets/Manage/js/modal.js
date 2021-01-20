@@ -57,6 +57,15 @@ function updateModal(content) {
 
 }
 
+function ModalOnClose(func) {
+
+    $("#dynamicModal").on("hidden.bs.modal", function(){
+        $("#dynamicModal").unbind("hidden.bs.modal");
+        func();
+    });
+
+}
+
 function closeModal() {
     
     $("#dynamicModal").modal('hide');

@@ -171,5 +171,25 @@ class db {
         
     }
 
+    public static function getCredentials() {
+        try {
+
+            $conn = parse_ini_file("../app/db.ini");
+
+            if(!$conn) {
+
+                throw new Exception("DEVELOPER: Database configuration file is missing. (LINE " . __LINE__ . " - " . __FILE__ . ")");
+
+            }
+
+        } catch(Exception $e) {
+
+            die($e->getMessage());
+
+        }
+
+        return $conn;
+    }
+
 }
 ?>

@@ -60,7 +60,7 @@ var Cinema = {
                         data: data,
                         success: function(response) {
 
-                            updateModal("<h2>Check your email</h2><hr/><p>We have sent you a reset password link to your email.</p>");
+                            updateModal("<h2>Check your email</h2><hr/><p>We have sent you a reset password link to your email.</p><br/><small>Please allow up to 15 minutes for the email to arrive. </small>");
 
                         },
                         error: function(err, status) {

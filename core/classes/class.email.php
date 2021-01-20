@@ -12,13 +12,13 @@ class email {
     private $cinema;
     private $content;
 
-    public function __construct($cinemaClass){
+    public function __construct($cinemaClass, $server = false){
 
         $this->cinema = $cinemaClass;
         $this->template = array();
         $info = $this->cinema->getCinemaInfo();
 
-        $server = parse_ini_file("../app/email.ini");
+        $server = (($server !== false) ? $server : parse_ini_file("../app/email.ini"));
 
         $this->mail = new PHPMailer(true);
 
@@ -33,6 +33,14 @@ class email {
         $this->mail->setFrom($server["account"], $info["name"]);
 
 
+    }
+
+    public function keepAlive(){
+        $this->mail->SMTPKeepAlive = true;
+    }
+
+    public function close() {
+        $this->mail->smtpClose();
     }
 
     public function addRecipient($email, $name = "") {
@@ -68,37 +76,59 @@ class email {
 
     public function setTemplate($id) {
 
+        $template = self::getTemplate($id);
+
+        if(!$template) {
+            die("Invalid template id provided.");
+        } else {
+            $this->template["path"] = $template["path"];
+            $this->template["required"] = $template["required"];
+
+        }
+
+    }
+
+    public static function getTemplate($id) {
+        $data = array();
+
         switch($id) {
 
             case "booking_confirmation":
-                $this->template["path"] = "../templates/Emails/booking/confirmation.phtml";
-                $this->template["required"] = array("%CINEMA%", "%TIME%", "%SHOWTIME%", "%BOOKINGREF%", "%BOOKING_NAME%", "%FILM%", "%SCREEN%", "%SEATS%", "%CARD_TYPE%", "%CARD_LAST4%", "%COST%");
+                $data["path"] = "../templates/Emails/booking/confirmation.phtml";
+                $data["required"] = array("%CINEMA%", "%TIME%", "%SHOWTIME%", "%BOOKINGREF%", "%BOOKING_NAME%", "%FILM%", "%SCREEN%", "%SEATS%", "%CARD_TYPE%", "%CARD_LAST4%", "%COST%");
                 break;
 
             case "booking_cancellation":
-                $this->template["path"] = "../templates/Emails/booking/cancellation.phtml";
-                $this->template["required"] = array("%CINEMA%", "%TIME%", "%SHOWTIME%", "%BOOKINGREF%", "%BOOKING_NAME%", "%FILM%", "%SCREEN%", "%SEATS%", "%REFUND_INFO%","%CARD_TYPE%", "%CARD_LAST4%", "%COST%");
+                $data["path"] = "../templates/Emails/booking/cancellation.phtml";
+                $data["required"] = array("%CINEMA%", "%TIME%", "%SHOWTIME%", "%BOOKINGREF%", "%BOOKING_NAME%", "%FILM%", "%SCREEN%", "%SEATS%", "%REFUND_INFO%","%CARD_TYPE%", "%CARD_LAST4%", "%COST%");
+                break;
+
+            case "booking_moved":
+                $data["path"] = "../templates/Emails/booking/alteration.phtml";
+                $data["required"] = array("%CINEMA%", "%TIME%", "%SHOWTIME%", "%BOOKINGREF%", "%BOOKING_NAME%", "%FILM%", "%SCREEN%", "%SEATS%", "%COST%", "%ADMINMESSAGE%");
                 break;
 
             case "general":
-                $this->template["path"] = "../templates/Emails/general.phtml";
-                $this->template["required"] = array("%CONTENT%");
+                $data["path"] = "../templates/Emails/general.phtml";
+                $data["required"] = array("%CONTENT%");
                 break;
 
             case "reset-password":
-                $this->template["path"] = "../templates/Emails/account/reset-password.phtml";
-                $this->template["required"] = array("%RESETLINK%", "%CINEMANAME%");
+                $data["path"] = "../templates/Emails/account/reset-password.phtml";
+                $data["required"] = array("%RESETLINK%", "%CINEMANAME%");
                 break;
 
             case "password_updated":
-                $this->template["path"] = "../templates/Emails/account/password-updated.phtml";
-                $this->template["required"] = array("%CINEMANAME%");
+                $data["path"] = "../templates/Emails/account/password-updated.phtml";
+                $data["required"] = array("%CINEMANAME%");
                 break;
 
             default:
-                die(__LINE__ . " Invalid template selected.");
+                return false;
                 break;
         }
+
+        return $data;
 
     }
 
@@ -184,6 +214,19 @@ class email {
         return array("status" => true);
 
     }
+
+    public function clear() {
+
+        $this->mail->clearAllRecipients();
+        $this->mail->clearAddresses();
+        $this->mail->clearCCs();
+        $this->mail->clearBCCs();
+        $this->mail->clearReplyTos();
+        $this->mail->clearAttachments();
+        $this->mail->clearCustomHeaders();
+
+    }
+
 
     public function Help() {
 
