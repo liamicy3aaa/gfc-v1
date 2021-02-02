@@ -3,6 +3,18 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
+/**
+ * Class email
+ *
+ * @author Liam McClelland
+ * @property string $template Id of the template chosen for the email.
+ * @property string $username The username for the email account.
+ * @property string $password The password for the email account.
+ * @property PHPMailer $mail PHPMailer object.
+ * @property cinema $cinema Reference to an instance of the cinema class.
+ * @property array $content Array of content for the email.
+ */
+
 class email {
 
     private $template;
@@ -11,6 +23,13 @@ class email {
     private $mail;
     private $cinema;
     private $content;
+
+    /**
+     * email constructor.
+     * @param cinema $cinemaClass
+     * @param array|bool $server
+     * @throws Exception
+     */
 
     public function __construct($cinemaClass, $server = false){
 
@@ -22,26 +41,51 @@ class email {
 
         $this->mail = new PHPMailer(true);
 
-        //$this->mail->SMTPDebug = SMTP::DEBUG_SERVER;                      // Enable verbose debug output
-        $this->mail->isSMTP();                                            // Send using SMTP
+        $this->mail->isSMTP();                                        // Send using SMTP
         $this->mail->Host       = $server["host"];                    // Set the SMTP server to send through
-        $this->mail->SMTPAuth   = true;                                   // Enable SMTP authentication
-        $this->mail->Username   = $server["username"];                     // SMTP username
-        $this->mail->Password   = $server["password"];                               // SMTP password
-        $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` also accepted
-        $this->mail->Port       = $server["port"];                                    // TCP port to connect to
+        $this->mail->SMTPAuth   = true;                               // Enable SMTP authentication
+        $this->mail->Username   = $server["username"];                // SMTP username
+        $this->mail->Password   = $server["password"];                // SMTP password
+        $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;     // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` also accepted
+        $this->mail->Port       = $server["port"];                    // TCP port to connect to
         $this->mail->setFrom($server["account"], $info["name"]);
 
 
     }
 
+    /**
+     * Keep the connection alive
+     *
+     * Ensures the connection to the SMTP server remains active for the duration of the script.
+     *
+     * @return null
+     */
+
     public function keepAlive(){
         $this->mail->SMTPKeepAlive = true;
     }
 
+    /**
+     * Close the connection
+     *
+     * Closes the connection to the SMTP server.
+     *
+     * @return null
+     */
+
     public function close() {
         $this->mail->smtpClose();
     }
+
+    /**
+     * Add Recipient
+     *
+     * Enables you to add a recipient to the current email you intend to send.
+     *
+     * @param string $email User's email
+     * @param string $name User's name
+     * @throws Exception
+     */
 
     public function addRecipient($email, $name = "") {
 
@@ -49,11 +93,31 @@ class email {
 
     }
 
+    /**
+     * Add Reply to
+     *
+     * Enables you to add a reply to contact to the current email you intend to send.
+     *
+     * @param string $email User's email
+     * @param string $name User's name
+     * @throws Exception
+     */
+
     public function addReplyTo($email, $name) {
 
         $this->mail->addReplyTo($email, $name);
 
     }
+
+    /**
+     * Add CC
+     *
+     * Enables you to add a CC recipient to the current email you intend to send.
+     *
+     * @param string $email User's email
+     * @param string $name User's name
+     * @throws Exception
+     */
 
     public function addCC($email, $name) {
 
@@ -61,12 +125,31 @@ class email {
 
     }
 
+    /**
+     * Add BCC
+     *
+     * Enables you to add a BCC recipient to the current email you intend to send.
+     * 
+     * @param string $email User's email
+     * @param string $name User's name
+     * @throws Exception
+     */
+
     public function addBCC($email, $name){
 
         $this->mail->addBCC($email, $name);
 
     }
 
+    /**
+     * Add Attachment
+     *
+     * Enables you to attach a file to the current email you intend to send.
+     *
+     * @param string $filePath Path to the file you wish to attach.
+     * @param string $label The name you would to give the file.
+     * @throws Exception
+     */
     public function addAttachment($filePath, $label) {
 
         // Attachments
@@ -74,19 +157,39 @@ class email {
 
     }
 
+    /**
+     * Set template
+     *
+     * Enables you to choose the template for the current email you intend to send.
+     *
+     * @param string $id Id of the email template.
+     */
+
     public function setTemplate($id) {
 
         $template = self::getTemplate($id);
 
         if(!$template) {
+
             die("Invalid template id provided.");
+
         } else {
+
             $this->template["path"] = $template["path"];
             $this->template["required"] = $template["required"];
 
         }
 
     }
+
+    /**
+     * Get Template
+     *
+     * Enables you to retrieve information about a template using a template id.
+     *
+     * @param string $id Id of the email template.
+     * @return array|bool Returns the template data if the template exists or false if it doesn't exist.
+     */
 
     public static function getTemplate($id) {
         $data = array();
@@ -132,16 +235,32 @@ class email {
 
     }
 
+    /**
+     * Set Subject
+     *
+     * Enables you to set a subject for the current email you intend to send.
+     *
+     * @param string $subject The subject you wish give the email.
+     */
     public function setSubject($subject) {
 
         $this->mail->Subject = $subject;
 
     }
 
+    /**
+     * Add Content
+     *
+     * Enables you to set the content for the email template you selected. Must include all the required pieces of data the template requires.
+     *
+     * @param array $data The array of data for the email.
+     */
+
     public function addContent($data) {
 
         $required = $this->template["required"];
 
+        // Checking the required data has been provided.
         foreach($required as $item) {
 
             if(!$data[$item]) {
@@ -156,6 +275,13 @@ class email {
 
     }
 
+    /**
+     * Build email
+     *
+     * Generates the html for the email using the template and data.
+     *
+     * @return null
+     */
     private function buildEmail() {
 
         $content = str_replace($this->template["required"], $this->content, file_get_contents($this->template["path"]));
@@ -164,6 +290,13 @@ class email {
 
     }
 
+    /**
+     * Send Email
+     *
+     * Triggers the sending of the current email.
+     *
+     * @return bool
+     */
     public function send() {
 
         // Content
@@ -184,6 +317,15 @@ class email {
 
     }
 
+    /**
+     * Test connection
+     *
+     * Allows us to test a SMTP configuration to ensure we can connect and successfully send an email using it.
+     *
+     * @param array $server Server configuration information. Used to test the SMTP connection.
+     * @return array Returns the status and if present an error message for the request.
+     * @throws Exception
+     */
     public static function testConnection($server) {
 
         $mail = new PHPMailer(true);
@@ -215,6 +357,11 @@ class email {
 
     }
 
+    /**
+     * Clear
+     *
+     * Remove any set data from the email to prepare it for another iteration.
+     */
     public function clear() {
 
         $this->mail->clearAllRecipients();
@@ -227,7 +374,13 @@ class email {
 
     }
 
-
+    /**
+     * Help
+     *
+     * Provides some information about how the email class works.
+     *
+     * @return null
+     */
     public function Help() {
 
         $html = "<p>Welcome to the help screen. Below, please find the order that you need to call the functions in to successfully send an email.</p>";

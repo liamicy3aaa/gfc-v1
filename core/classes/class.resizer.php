@@ -1,43 +1,96 @@
 <?php
 
+/**
+ * Class resizer
+ *
+ * @author Liam McClelland
+ * @property array $cropSize An array containing the width and height of what you wish the image to be cropped to Eg. [1920,1080]
+ * @property string $uploadUrl The web address which the cropped file should be uploaded to.
+ * @property string $successMessage The message you wish to display on successful completion of the crop and upload.
+ * @property bool $centered Controls whether the resizer is displayed in the center of the container.
+ */
 class resizer {
     
     protected $cropSize;
     protected $uploadUrl;
     protected $successMessage;
     protected $centered;
-    
-    
+
+    /**
+     * resizer constructor.
+     */
+
     public function __construct() {
     
     $this->centered = false;    
                 
     }
-    
+
+    /**
+     * Center Resizer
+     *
+     * Allows you to align the resizer client to the center of the container.
+     *
+     * @param string $cmd Optional
+     */
+
     public function centerResizer($cmd = "1") {
         
        $this->centered = true;
         
     }
-    
+
+    /**
+     * Set Crop Size
+     *
+     * Allows you to set the size of the image you wish to receive.
+     *
+     * @param int $width Number of pixels wide the crop size should be.
+     * @param int $height Number of pixels high the crop size should be.
+     */
+
     public function setCropSize($width, $height) {
         
          $this->cropSize = array($width, $height);
         
     }
-    
+
+    /**
+     * Set Upload URL
+     *
+     * Allows you to set the endpoint for where you wish the cropped image to be uploaded to.
+     *
+     * @param string $url The web address you want the cropped image to be uploaded to.
+     */
+
     public function setUploadUrl($url) {
         
         $this->uploadUrl = $url;
         
     }
-    
+
+    /**
+     * Set Success Message
+     *
+     * Allows you to set a custom success message which will be displayed after the successful completion of the crop and upload.
+     *
+     * @param string $message The message you wish to be displayed after successful completion of the crop and upload.
+     */
+
     public function setSuccessMessage($message) {
         
         $this->successMessage = $message;
         
     }
-    
+
+    /**
+     * Build Resizer Client
+     *
+     * Generates the html for the resizer client.
+     *
+     * @return string Html for the resizer front-end client.
+     */
+
     public function build() {
         
         $html = "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.3/croppie.min.css'>";

@@ -3,7 +3,7 @@
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-// Error reporting status //
+// ERROR REPORTING //
 error_reporting(E_ALL);
 
 // APP CONFIGURATION //
@@ -19,16 +19,18 @@ include "../routes/payments.php";
 include "../routes/settings.php";
 ///////////////////
 
+// LANDING PAGE //
 $app->get('/', function (Request $request, Response $response, array $args) {
 
     $cinema = $this->get("cinema");
+
+    // Get showtimes
     $r = $cinema->getShowtimes(false, array(
         "activeFilms" => true,
-        "activeShowings" => true
-    )); //getFilmsByReleaseDate(((isset($_GET["mon"])) ? $_GET["mon"]: 8), 2019);
+        "activeShowings" => true,
+    ));
 
-
-
+    // If there are no showtimes, return a default message.
     if($r === false) {
 
         $films = "<div class='alert alert-info text-center my-3'>No films currently showing.</div>";
@@ -42,6 +44,7 @@ $app->get('/', function (Request $request, Response $response, array $args) {
         $filmInfo = array();
         $filmData = array();
 
+        // Loop through each film and add the showtimes to them.
         foreach($films as $item => $film) {
 
             if($film["film_status"] == 1) {
@@ -55,6 +58,7 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 
         }
 
+        // Ensure we don't have multiple copies of the same films and that we only include films that are active.
         foreach (array_unique($r["_films"]) as $id => $film) {
             
             if(isset($filmInfo[$film]["film_status"]) && $filmInfo[$film]["film_status"] == 1) {
@@ -66,23 +70,24 @@ $app->get('/', function (Request $request, Response $response, array $args) {
         }
 
         unset($r["_films"]);
-        
+
+        // If film data is empty, return a default message.
         if(empty($filmData)) {
             
             $films = "<div class='alert alert-info text-center my-3'>No films currently showing.</div>";
             
         } else {
 
+            $settings = array();
 
-        $films = $cinema->buildFilmList($filmData);
+            // Build film list.
+            $films = $cinema->buildFilmList($filmData, $settings);
         
         }
 
     }
 
-    //return $response = $this->view->render($response, "blank.phtml", ["_title" => "blank", "html" => $html]);
-
-
+    // RENDER VIEW //
     return $response = $this->view->render($response, "whats-on.phtml", [
         "_title" => "What's-on",
         "films" => $films,
@@ -92,4 +97,5 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 
 });
 
+// RUN APP //
 $app->run();

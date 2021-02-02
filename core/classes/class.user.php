@@ -1,10 +1,24 @@
 <?php
 
+/**
+ * Class user
+ *
+ * @author Liam McClelland
+ * @property db $conn Reference to an instance of the database class.
+ * @property array $manageAccess Array of valid management account types.
+ * @property string $CustomerAccess Array of valid customer account types.
+ */
 class user {
     
     private $conn;
     private $manageAccess;
-    
+    private $CustomerAccess;
+
+    /**
+     * user constructor.
+     * @param db $db
+     */
+
     public function __construct($db) {
         
         $this->conn = $db;
@@ -16,20 +30,38 @@ class user {
         
     }
 
+    /**
+     * Get User By Email
+     *
+     * Retrieve information about a user using their email.
+     *
+     * @param string $email
+     * @return array
+     */
+
     public function getUserByEmail($email) {
 
-        $result = $this->conn->query("SELECT * FROM gfc_users WHERE user_email = ? LIMIT 1", $email)->fetchArray();
-
-        return $result;
+        return $this->conn->query("SELECT * FROM gfc_users WHERE user_email = ? LIMIT 1", $email)->fetchArray();
 
     }
+
+    /**
+     * Get User Info
+     *
+     * Retrieve certain or all pieces of information about a user.
+     * @param array|bool $columns Specify which pieces of data you wish to retrieve.
+     * @param int|bool $user Id of the user in question.
+     * @return array
+     */
 
     public function getUserInfo($columns = false, $user = false) {
 
         $allowed = array("id", "user_id", "user_name", "user_email", "user_type", "user_created","user_lastlogin");
 
+        // Check if columns have been provided.
         if($columns !== false) {
 
+            // Check that each requested column is allowed to be accessed.
             foreach($columns as $column) {
 
                 if(!in_array($column, $allowed)) {
@@ -62,21 +94,24 @@ class user {
         );
 
     }
-    
+
     /**
-    * Authenticate
-    * This checks if the provided credentials are valid for an account
-    * 
-    * @param mixed $username
-    * @param mixed $password
-    * @param mixed $settings
-    */
-    
+     * Authenticate
+     *
+     * Validate the login details for a user using a usernam and password.
+     *
+     * @param string $username Username for the account.
+     * @param string $password Password for the account.
+     * @param array $settings Optional array of settings.
+     * @return array
+     */
+
     public function authenticate($username, $password, $settings = array()) {
         
-        // Get user encrypted password
+        // Get user hashed password
         $r = $this->conn->query("SELECT user_pwd FROM gfc_users WHERE user_id = ?", $username)->fetchArray();
-        
+
+        // Check if a user account was found.
         if(count($r) < 1) {
             
             return array("status"=>false, "reason"=>"invalid_username");
@@ -98,26 +133,31 @@ class user {
         }   
         
     }
-    
+
     /**
-    * Login
-    * This function will log the user in and setup the session with the relevant information
-    * 
-    * @param mixed $username
-    * @param mixed $password
-    * @param mixed $redirect [Optional] - You can provide a string url that the function can redirect to on successful completion.
-    */
-    
+     * Login
+     *
+     * Authenticate and create user's session
+     *
+     * @param string $username Username for the account.
+     * @param string $password Password for the account.
+     * @param string $area Area the login is for (Customer screen or Manage screen)
+     * @param string|bool $redirect endpoint the user should be redirected to on completion.
+     * @return array
+     */
+
     public function login($username, $password, $area, $redirect = false) {
         
         // Check the credentials provided are in valid format
         $id = ((ctype_alnum($username)) ? $username : false);
         $pwd = $password;
 
+        // Check the provided login area exists.
         if(!in_array($area, $this->areas)) {
             return array("status" => "false", "reason" => "invalid_login_area", "reason_desc" => "Invalid login area provided.");
         }
-        
+
+        // Check the username and password are in a validate format.
         if(!$id || !$pwd) {
             
             return array("status" => false, "reason" => "invalid_format", "reason_desc" => "Username or password not in a valid format");
@@ -126,9 +166,8 @@ class user {
         
         // Check the credentials match an account and are valid
         $auth = $this->authenticate($id, $pwd);
-        
-       // var_dump($auth); exit;
-        
+
+        // Check account status
         if(!$auth["status"]) {
             
             switch($auth["reason"]) {
@@ -154,14 +193,17 @@ class user {
         // Get users information
         $user = $this->conn->query("SELECT * FROM gfc_users WHERE user_id = ?", $id)->fetchArray();
 
+        // Check if user is a customer.
         if($this->isCustomer($user["user_type"])) {
 
+            // If the area isn't for a customer, then they are logging in through the wrong area.
             if($area !== "customer") {
 
                 return array("status" => false, "reason" => "invalid_account_type", "reason_desc" => "Invalid account type for this area.");
 
             }
 
+            // Create the customer session.
             $this->createCustomerSession(array(
                 "id" => $user["id"],
                 "type" => $user["user_type"],
@@ -172,12 +214,14 @@ class user {
 
         } else {
 
+            // If the area isn't for a Manager, then they are logging in through the wrong area.
             if($area !== "manage") {
 
                 return array("status" => false, "reason" => "invalid_account_type", "reason_desc" => "Invalid account type for this area.");
 
             }
 
+            // Create Manager session.
             $this->createManagerSession(array(
                 "id" => $user["id"],
                 "type" => $user["user_type"],
@@ -208,11 +252,28 @@ class user {
         
     }
 
+    /**
+     * Is Manager
+     *
+     * Check if the logged in user is a Manager.
+     *
+     * @param string $userRole The role of the user.
+     * @return bool
+     */
     public function isManager($userRole) {
 
         return in_array($userRole, $this->ManageAccess);
 
     }
+
+    /**
+     * Is Customer
+     *
+     * Check if the logged in user is a Customer.
+     *
+     * @param string $userRole The role of the user.
+     * @return bool
+     */
 
     public function isCustomer($userRole) {
 
@@ -220,6 +281,14 @@ class user {
 
     }
 
+    /**
+     * Get Area Root
+     *
+     * Retrieve the root endpoint for a given area.
+     *
+     * @param string $area Area you wish to retrieve the root for.
+     * @return string
+     */
     public function getAreaRoot($area) {
 
         if($area == "customer") {
@@ -233,20 +302,23 @@ class user {
         }
 
     }
-    
+
     /**
-    * Logout
-    * Logs the user out of the system and can redirect them to the specified page.
-    * 
-    * @param mixed $redirect
-    */
-    
+     * Logout
+     *
+     * Log the user out of the system.
+     *
+     * @param string|bool $redirect Endpoint you would like the user to be redirected to after they have been logged out.
+     * @return bool
+     */
+
     public function logout($redirect = false) {
         
         // Destroying the user part of the session
         unset($_SESSION["user"]);
         unset($_SESSION["_customer"]);
-        
+
+        // Check if a redirect value has been provided
         if($redirect !== false) {
             
             $this->redirect($redirect);
@@ -259,49 +331,91 @@ class user {
         
     }
 
+    /**
+     * Hash Password
+     *
+     * Hash a password to prevent the true value from being viewed.
+     *
+     * @param string $pwd Password you wish to hash.
+     * @return false|string|null
+     */
+
     protected function hashPassword($pwd) {
+
         return password_hash($pwd, PASSWORD_DEFAULT);
+
     }
+
+    /**
+     * Update Password
+     *
+     * Update the password for the logged in user.
+     *
+     * @param cinema $cinema Reference to an instance of the cinema class.
+     * @param int $user Id of the user.
+     * @param string $pwd The new password.
+     * @param bool $notifyUser Choose whether to let the user know their password has been changed.
+     * @return bool
+     * @throws Exception
+     */
 
     public function updatePassword($cinema, $user, $pwd, $notifyUser = true) {
 
+        // Hash the password.
         $hashedPwd = $this->hashPassword($pwd);
 
+        // Update the accounts password.
         $update = $this->conn->query("UPDATE gfc_users SET user_pwd = '$hashedPwd' WHERE id = ?", $user)->affectedRows();
 
+        // Check if update was successful
         if($update < 1) {
 
            return false;
 
         } else {
 
+            // Check if we need to notify the user.
             if(!$notifyUser) {
 
                 return true;
 
             } else {
 
+                // Notify the user.
+
+                // Get the user and cinema info.
                 $user = $this->getUserInfo(array("user_email", "user_name"), $user);
                 $cinemaName = $cinema->getCinemaInfo();
 
-                $email = new email($cinema);
-                $email->setTemplate("password_updated");
-                $email->setSubject("Password updated");
-                $email->addRecipient($user["data"]["user_email"], $user["data"]["user_name"]);
-                $email->addContent(array(
-                    "%CINEMANAME%" => $cinemaName["name"]
-                ));
-
-                $send = $email->send();
-
-                    return true;
+                // Add email to the queue.
+                $emailQueue = new emailQueue($this->conn, $cinema);
+                $emailQueue->add(
+                    array(
+                        "name" => $user["data"]["user_name"],
+                        "email" => $user["data"]["user_email"]
+                    ),
+                    "password_updated",
+                    "Password updated",
+                    array(
+                        "%CINEMANAME%" => $cinemaName["name"]
+                    )
+                );
 
             }
 
         }
 
     }
-    
+
+    /**
+     * Register
+     *
+     * Register a new user to the platform.
+     *
+     * @param array|bool $user Data object for the new user.
+     * @return array|bool
+     */
+
     public function register($user = false) {
         
         $required = array(
@@ -376,7 +490,16 @@ class user {
         
         
     }
-    
+
+    /**
+     * Log User Login
+     *
+     * Log the login of the current user.
+     *
+     * @param int $user Id of the user.
+     * @return bool
+     */
+
     public function logLogin($user) {
         
         $time = time();
@@ -395,18 +518,43 @@ class user {
         
     }
 
+    /**
+     * Create Manager Session
+     *
+     * Create a new Manager session using the provided data.
+     *
+     * @param array $data Data for the session.
+     */
+
     private function createManagerSession($data) {
 
         $_SESSION["user"] = $data;
 
     }
 
+    /**
+     * Create Customer Session
+     *
+     * Create a new Customer session using the provided data.
+     *
+     * @param array $data Data for the session.
+     */
+
     private function createCustomerSession($data) {
 
         $_SESSION["_customer"] = $data;
 
     }
-    
+
+    /**
+     * Validate Password
+     *
+     * Check if the provided password passes the system password requirements.
+     *
+     * @param string $password Password you wish to validate.
+     * @return array
+     */
+
     public function validPassword($password) {
         
         // Get the requirements from the system config
@@ -415,7 +563,8 @@ class user {
         $settings = json_decode($r["settings"], true);
 
         $error = array("status" => false);
-        
+
+        // Loop through each setting and ensure the param passes the requirements.
         foreach($settings as $setting => $param) {
             
             switch($setting) {
@@ -521,7 +670,8 @@ class user {
                     
                 
             }
-            
+
+            // Check if an error has occurred.
             if(!$error["status"]) {
                 
                 break;
@@ -529,7 +679,8 @@ class user {
             } 
             
         }
-        
+
+        // Check if an error has occurred.
         if(!$error["status"]) {
             
             return array("status" => false, "error" => "invalid_password", "error_desc" => $error["reason"]);
@@ -541,7 +692,16 @@ class user {
         }
         
     }
-    
+
+    /**
+     * Logged In
+     *
+     * Check if a user is logged in.
+     *
+     * @param string $area Area you wish to check the user is logged in for.
+     * @return bool
+     */
+
     public function loggedIn($area = "manage") {
 
         if($area == "manage") {
@@ -557,9 +717,16 @@ class user {
         return $status;
         
     }
-    
+
+    /**
+     * Login Required
+     *
+     * Ensures the user is logged in. If not it will prevent the script from going any further and redirect the user.
+     */
+
     public function loginRequired() {
-        
+
+        // Checking if the user is logged in.
         if(!$this->loggedIn()) {
 
             notifications::add("info", "Please login to access this page.");
@@ -571,12 +738,30 @@ class user {
         
     }
 
+    /**
+     * Lockout
+     *
+     * Lock the user out from signing in for a set time.
+     *
+     * @return bool
+     */
+
     public function lockout() {
 
         $_SESSION["lockOut"] = time() + 900;
         return true;
 
     }
+
+    /**
+     * Generate Reset code
+     *
+     * Generate a reset code for a password reset request.
+     *
+     * @param int $userId Id of the user.
+     * @return string
+     * @throws Exception
+     */
 
     public function generateResetCode($userId) {
 
@@ -594,12 +779,21 @@ class user {
 
     }
 
+    /**
+     * Validate Reset code
+     *
+     * Validate that the provided reset code is valid code.
+     *
+     * @param string $code Code provided in the reset Password request.
+     * @return bool
+     */
+
     public function validateResetCode($code) {
 
         $decrypted =  cipher::decrypt($code);
         $decrypted = explode(":", $decrypted);
 
-
+        // Validating the code contains valid data.
         if(count($decrypted) > 4 || count($decrypted) < 1 || !ctype_digit($decrypted[1]) || time() > $decrypted[2]) {
             notifications::add("danger", "Invalid reset code. Please try again later.");
             $this->redirect("/");
@@ -610,17 +804,22 @@ class user {
         $data = $this->conn->query("SELECT * FROM gfc_users_reset WHERE secret = ?", $code);
 
         if($data->numRows() < 1) {
+
             notifications::add("danger", "Invalid reset code. Please try again later.");
             $this->redirect("/");
             return false;
+
         }
 
         $data = $data->fetchArray();
 
+        // Checking the code matches the user id and expiry set in the database.
         if($data["user_id"] !== intval($decrypted[1]) || $data["expiry"] !== intval($decrypted[2])) {
+
             notifications::add("danger", "Invalid reset code. Please try again later.");
             $this->redirect("/");
             return false;
+
         }
 
         $_SESSION["resetUser"] = $data["user_id"];
@@ -632,10 +831,22 @@ class user {
 
     }
 
+    /**
+     * Send Reset Password Link
+     *
+     * Send the reset link to the user to enable them to reset their password.
+     *
+     * @param cinema $cinema Reference to an instance of the cinema class.
+     * @param int $userId Id of the user you wish to send the email to.
+     * @return array
+     * @throws Exception
+     *
+     */
     public function sendResetPasswordLink($cinema, $userId) {
 
         $userInfo = $this->getUserInfo(array("user_email", "user_name"), $userId);
 
+        // Checking if there is a user with the provided id.
         if(!$userInfo["status"]){
 
             return $userInfo;
@@ -647,20 +858,27 @@ class user {
             "name" => $userInfo["data"]["user_name"]
         );
 
+        // Generate reset code.
         $secret = $this->generateResetCode($userId);
+
+        // Get cinema info
         $cinemaName = $cinema->getCinemaInfo();
         $cinemaName = $cinemaName["name"];
-        $emailQueue = new emailQueue($this->conn, $cinema);
 
+        // Add email to the emailQueue
+        $emailQueue = new emailQueue($this->conn, $cinema);
         $email = $emailQueue->add($recipient, "reset-password", "Reset Password", array(
             "%RESETLINK%" => "https://" . $_SERVER['HTTP_HOST'] . "/auth/reset-password/$secret",
             "%CINEMANAME%" => $cinemaName
         ));
 
+        // Check the email has been successfully added to the queue.
         if(!$email["status"]){
+
             http_response_code(400);
             print "<pre>"; print_r($email); print "</pre>";
             exit;
+
         }
 
         return array("status" => true);
@@ -669,6 +887,7 @@ class user {
     
     /**
     * Redirect
+     *
     * Redirects user to the provided URL
     * 
     * @param mixed $url

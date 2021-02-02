@@ -1,21 +1,20 @@
 <?php
 
 /**
-* Cipher Class
-* Basic cipher class allowing us to encrypt and decrypt a string with a private key
-* Author: Liam McClelland
-* Copyright: 2019 © Gadgetfreak Systems.
-*/
-
+ * Class cipher
+ *
+ * @author Liam McClelland
+ */
 class cipher {
     
     /**
-    * Encrypt Function
-    * Pass a string to be encrypted 
-    * 
-    * @param mixed $string
-    * @param mixed $action
-    * @return mixed string
+    * Encrypt
+    *
+    * Encrypt a string to prevent the true value from being readable to the human eye.
+    *
+    * @param string $string Value you wish to encrypt
+    * @param string $action Choose whether you wish to encrypt or decrypt the provided input.
+    * @return string
     */
     
     public static function encrypt($string, $action = "e") {
@@ -53,11 +52,12 @@ class cipher {
     }
     
     /**
-    * Decrypt Function
-    * Decrypts a string that has already been encrypted. It simply uses the encrypt function but passes the decrypt command.
-    * 
-    * @param mixed $string
-    * @return mixed string
+    * Decrypt
+    *
+    * Decrypt an encrypted string to reveal the true value.
+    *
+    * @param string $string
+    * @return string
     */
     
     public static function decrypt($string) {
