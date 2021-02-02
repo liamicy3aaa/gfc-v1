@@ -10,4 +10,9 @@ app/keys.ini
 app/email.ini
 app/stripe.ini
 .DS_Store
+public/.DS_Store
+public/assets/.DS_Store
 public/.well-known/*
+public/assets/.DS_Store
+public/assets/.DS_Store
+public/.DS_Store

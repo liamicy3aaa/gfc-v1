@@ -149,6 +149,7 @@ var Payments = {
             Payments.settings.onError(result.error);
 
         } else {
+
             //Otherwise send paymentMethod.id to your server (see Step 4)
             fetch((Payments.settings.serverUrl + Payments.settings.transactionId), {
                 method: 'POST',
