@@ -4392,6 +4392,15 @@ input[type="button"].btn-block {
   background-color: #4e73df;
 }
 
+.nav-pills-secondary {
+  background-color: #858796;
+}
+
+.nav-pills-info {
+  background-color: #36b9cc;
+}
+
+
 .nav-fill .nav-item {
   -webkit-box-flex: 1;
   -ms-flex: 1 1 auto;
