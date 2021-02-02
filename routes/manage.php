@@ -1747,6 +1747,18 @@ $app->group("/Manage", function(){
     });
 
     /** ####### TOOLS ######## */
+
+    $this->get("/tools/editor", function($request, $response, $args){
+
+        $returnObj = array(
+            "_title" => "Editor JS",
+            "_user" => $_SESSION["user"],
+            "_page" => "editor"
+        );
+
+        return $this->manageView->render($response, "/tools/editorjs.phtml", $returnObj);
+
+    });
     
     /** ## SHOWING TIMELINE ## */
     

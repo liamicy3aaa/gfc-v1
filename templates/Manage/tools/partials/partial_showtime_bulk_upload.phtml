@@ -3,14 +3,18 @@
         <div class="col-12 col-md-7">
             <h3>Upload CSV</h3>
             <p>Please choose a CSV file using the selector below:</p>
-            <form id='importForm' class='mt-3' action='' method='post' accept-charset='utf-8' enctype='multipart/form-data'>
+            <form id='importForm' class='mt-3 needs-validation' action='' method='post' accept-charset='utf-8' enctype='multipart/form-data' novalidate>
                 <div class="custom-file">
-                    <input id="importUpload" class="custom-file-input" type='file' name='files' accept=".csv" required onchange="updateFileName()">
+                    <input id="importUpload" class="custom-file-input" type='file' name='files' accept=".csv" required onchange="updateFileName()" required>
                     <label id="importUploadLabel" class="custom-file-label" for="importUpload">Choose CSV</label>
+                    <div class="invalid-feedback">
+                        Please select a valid file.
+                    </div>
                 </div>
                 <br/><button id='importSubmit' class="mt-2 btn btn-outline-success btn-block" type='submit'><span id="btnText">Upload File</span><span id="loaderImport" style="display:none;"><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span> Uploading...</span></button>
             </form>
             <script>
+
                 function updateFileName() {
                     let fileInput = $("#importUpload");
                     $("#importUploadLabel").html(fileInput.val().split('\\').pop());
@@ -19,6 +23,11 @@
                 $("#importForm").on("submit", function(e){
 
                     e.preventDefault();
+
+                    if (this.checkValidity() === false || $("#importUpload").val() === null) {
+                        $("#importForm").addClass('was-validated');
+                        return;
+                    }
 
                     $("#btnText").hide();
                     $("#loaderImport").show();
