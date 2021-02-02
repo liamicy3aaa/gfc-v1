@@ -2,16 +2,6 @@
 
 $app->group("/Manage", function(){
 
-    $this->get("/test", function($request, $response, $args){
-
-        $cinema = $this->get("cinema");
-        $process = $cinema->validateSeatTransfer(63, 72);
-
-        print "<pre>"; print_r($process); print "</pre>";
-        exit;
-
-    });
-    
     /** AJAX */
 
     $this->get("/ajax/tickets/new", function($request, $response, $args) {
@@ -1006,7 +996,7 @@ $app->group("/Manage", function(){
 
                 if(count($_SESSION["_temp"]["conflicts"]) >= 1) {
 
-                    if (!isset($postBody["fixConflict"])) {
+                    if (!isset($postBody["fixConflict"]) || !isset($postBody["notify"])) {
 
                         return $response->withJson(array("status" => 400, "error" => "missing_param"), 400);
 
@@ -1017,9 +1007,20 @@ $app->group("/Manage", function(){
                     }
                 }
 
+                if($postBody["notify"] == "notify") {
+                    $notifyMessage = $postBody["notifyMessage"];
+                    $notify = true;
+                    $cinemaName = $cinema->getCinemaInfo();
+                    $cinemaName = $cinemaName["name"];
+                } else {
+                    $notify = false;
+                }
+
 
                 // loop through each validate booking and update information
                 $bookings = $cinema->getBookingsByShowtime($_SESSION["current_performance_id"]);
+                $showInfo = $cinema->getShowInfo($_SESSION["current_performance_id"]);
+                $showInfo1 = $cinema->getShowInfo($_SESSION["_temp"]["show_id"]);
                 $processed = 0;
                 $change = array();
                 $update = array();
@@ -1033,14 +1034,14 @@ $app->group("/Manage", function(){
 
                         // Use algorithm to get new seats and then update the booking.
                         $newSeats = $cinema->getNextAvailableSeats($booking["booking_reference"], $_SESSION["_temp"]["show_id"]);
-                        $newSeats = $newSeats["data"];
-
                         $change[] = $booking["id"];
 
                         $update = $cinema->updateBooking($booking["booking_reference"], array(
                             "showtime_id" => $_SESSION["_temp"]["show_id"],
                             "booking_seats" => $newSeats
                         ));
+
+                        $_SESSION["_tmp"]["newSeats"] = $newSeats;
 
                     } else {
 
@@ -1059,7 +1060,54 @@ $app->group("/Manage", function(){
                         ));
 
                     }
+
                     $processed++;
+
+                    // Notify user of this change
+                    if($notify) {
+                        $screenLabel = $cinema->getScreenInfo(array($showInfo["screen_id"]));
+                        $screenLabel = $screenLabel[$showInfo["screen_id"]]["screen_name"];
+                        $emailQueue = $this->get("emailQueue");
+                        $notifyMessage = ((strlen($notifyMessage) >= 1) ? $notifyMessage : "no message.");
+
+                        $seating = ((isset($_SESSION["_tmp"]["newSeats"])) ? $_SESSION["_tmp"]["newSeats"] : json_decode($booking["booking_seats"], true));
+                        $seats = $cinema->getSeatingInfo($seating);
+                        //unset($_SESSION["_tmp"]["newSeats"]);
+
+                        $seatLabels = array();
+
+                        foreach($seats as $seat) {
+
+                            $seatLabels[] = $seat["seat_row_label"] . $seat["seat_number"];
+
+                        }
+
+                        $recipient = array(
+                            "name" => $booking["booking_name"],
+                            "email" => $booking["booking_email"]
+                        );
+
+                        setlocale(LC_MONETARY,"en");
+                        $email = $emailQueue->add($recipient, "booking_moved", "Important update regarding your booking", array(
+                            "%CINEMA%" => $cinemaName,
+                            "%TIME%" => date("d/m/Y H:i", $booking["booking_ts"]),
+                            "%SHOWTIME%" => date("d/m/Y H:i", $showInfo1["time"]),
+                            "%BOOKINGREF%" => $booking["booking_reference"],
+                            "%BOOKING_NAME%" => $booking["booking_name"],
+                            "%FILM%" => $booking["film_name"],
+                            "%SCREEN%" => "Screen $screenLabel",
+                            "%SEATS%" => implode(",", $seatLabels),
+                            "%COST%" => money_format("%i", $booking["booking_total"]),
+                            "%ADMINMESSAGE%" => addSlashes($notifyMessage)
+                        ));
+
+                        if(!$email["status"]){
+                            http_response_code(400);
+                            print "<pre>"; print_r($email); print "</pre>";
+                            exit;
+                        }
+
+                    }
                 }
 
                 // Update the old showing to be cancelled
