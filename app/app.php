@@ -15,50 +15,44 @@ ini_set('session.cookie_secure', 1);
 session_name("GFC-AUTH");
 session_start();
 date_default_timezone_set("Europe/London");
-error_reporting(1);
+error_reporting(0);
 ini_set('display_errors', 1);
 require '../vendor/autoload.php';
 require '../core/write_ini_file.php';
 
 // Registering autoloader //
-spl_autoload_register('gfcAutoload');
+require_once "../core/autoload.php";
 
 
-// Autoloader function //
-function gfcAutoload($className) {
-
-    $class_name = strtolower($className);
-
-    $default = "../core/classes/class." . $class_name . ".php";
-
-    if(file_exists($default)) {
-
-        require_once $default;
-
-    }
-}
-
-
-$config['displayErrorDetails'] = true;
+$config['displayErrorDetails'] = false;
 $config['addContentLengthHeader'] = false;
-$config['debug'] = true;
+$config['debug'] = false;
 
 $app = new \Slim\App($config);
 
 $container = $app->getContainer();
+
+$container['errorHandler'] = function ($container) {
+    return function ($request, $response, $exception) use ($container) {
+        return $response->withStatus(500)
+            ->withHeader('Content-Type', 'text/html')
+            ->write("Oops, something's gone wrong!");
+    };
+};
+
+$container['phpErrorHandler'] = function ($c) {
+    return function ($request, $response, $error) use ($c) {
+        return $response->withStatus(500)
+            ->withHeader('Content-Type', 'text/html')
+            ->write(file_get_contents("../templates/errors/500.phtml"));
+    };
+};
 
 $container["db"] = function() {
 
 
 
     try {
-
-        write_ini_file("../app/test.ini", array(
-            "keys" => array(
-                "key1" => "123",
-                "key2" => "456"
-            )
-        ));
 
         $conn = parse_ini_file("../app/db.ini");
 
@@ -115,6 +109,11 @@ $container["user"] = function($container) {
     
   return new user($container["db"]);  
     
+};
+
+$container["emailQueue"] = function($container) {
+
+    return new emailQueue($container["db"], $container["cinema"]);
 };
 
 $container['notAllowedHandler'] = function ($container) {
