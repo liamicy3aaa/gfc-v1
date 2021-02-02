@@ -41,14 +41,26 @@ var Cinema = {
 
     newTicket: function() {
 
+        showModal("New Ticket", "<h3 class='p-5 text-center'>Loading...</h3>", {"size":"md", "vcenter":true});
+
         $.ajax({
             url: "/Manage/ajax/tickets/new",
             method: "GET",
             success: function(response){
 
-                showModal("New Ticket", response.html, {"size":"sm", "vcenter":true});
+                updateModal(response.html);
 
-                $("#newTicketSubmit").on("click", function(){
+                $("#newTicketForm").on("submit", function(e){
+
+                        e.preventDefault();
+
+                        if (this.checkValidity() === false) {
+                            $("#newTicketForm").addClass('was-validated');
+                            return;
+                        }
+
+                    $("#newTicketSubmit").addClass("disabled").attr("disabled", "true");
+                    $("#newTicketSubmit").html(Cinema.getLoader());
 
                     var data = $(this).closest("form").serialize();
 
@@ -68,6 +80,8 @@ var Cinema = {
 
                             alert(response.error_desc);
                             console.log(response);
+                            $("#newTicketSubmit").removeClass("disabled").removeAttr("disabled");
+                            $("#newTicketSubmit").html("Create ticket");
 
                         }
                     });
@@ -426,12 +440,14 @@ var Cinema = {
 
     getShowPlan: function(film, show) {
 
+        showModal("Seating Plan", "<h3 class='p-5 text-center'>Loading...</h3>", {"size":"lg", "vcenter":true});
+
         $.ajax({
             url: "/Manage/ajax/films/" + film + "/showtimes/" + show + "/plan",
             method: "GET",
             success: function(response) {
 
-                showModal("Seating Plan", response.html, {"size":"lg", "vcenter":true});
+                updateModal(response.html);
 
             },
             error: function(err) {
@@ -901,6 +917,15 @@ var Cinema = {
         });
 
     },
+    getLoader: function() {
+
+        return "<div class=\"text-center\">\n" +
+            "  <div class=\"spinner-border\" role=\"status\">\n" +
+            "    <span class=\"sr-only\">Loading...</span>\n" +
+            "  </div>\n" +
+            "</div>";
+
+    },
 
     movePerformance: function(showId) {
 
@@ -947,35 +972,58 @@ var Cinema = {
                                     return;
                                 }
 
+
+
                                 let fix = $('input[name="fixConflict"]:checked').val();
+                                var notifyStatus = "ignore";
+                                var message = "";
+
+                                if($("#notifyCustomers:checked").val() == "notifyCustomers") {
+                                    notifyStatus = "notify";
+                                    message = $("#notifyCustomersMessage").val();
+                                }
+
+                                $("#MPstep2").slideUp();
+                                $("<div id='finalStage'>" + Cinema.getLoader() + "</div>").insertAfter("#MPstep2");
 
                                 $.ajax({
                                     "url": "/Manage/ajax/showings/" + showId + "/movePerformance/process",
                                     "method": "POST",
-                                    "data": {fixConflict:fix},
+                                    "data": {fixConflict:fix, notify:notifyStatus, notifyMessage:message},
                                     "success": function(result){
-                                        location.reload();
+                                        $("#finalStage").html("<h2>Transfer complete.</h2><hr/><br/><p>Bookings have successfully been moved to the new showing.</p>");
+                                        ModalOnClose(function(){
+                                            location.reload();
+                                        });
+                                        // alert("Success");
                                     },
                                     "error": function(err) {
+                                        $("#MPstep2").slideDown();
+                                        $("#finalStage").remove();
                                         if(err.status == 500) {
                                             alert("A server error occurred. Please try again later.");
                                             closeModal();
                                         } else {
-                                            let r = JSON.parse(err.responseText);
+                                            try {
+                                                let r = JSON.parse(err.responseText);
 
-                                            switch(r.error) {
+                                                switch (r.error) {
 
-                                                case "invalid_param":
-                                                    alert("An error occurred. Please try again later.");
-                                                    break;
+                                                    case "invalid_param":
+                                                        alert("An error occurred. Please try again later.");
+                                                        break;
 
-                                                case "missing_param":
-                                                    alert("An error occurred. Please try again later.");
-                                                    break;
+                                                    case "missing_param":
+                                                        alert("An error occurred. Please try again later.");
+                                                        break;
 
-                                                default:
-                                                    alert("An error occurred. Please try again later.");
-                                                    break;
+                                                    default:
+                                                        alert("An error occurred. Please try again later.");
+                                                        break;
+                                                }
+
+                                            } catch(e) {
+                                                alert("An error occurred. Please try again later.");
                                             }
 
                                             closeModal();
