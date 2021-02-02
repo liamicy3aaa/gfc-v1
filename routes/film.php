@@ -9,10 +9,10 @@ $app->group("/film", function(){
         
         $filmInfo = $cinema->getFilmData($filmId);
         
-        if(count($filmInfo) < 1) {
-            
-            die("Film not found");
-            
+        if(count($filmInfo) < 1 || $filmInfo["film_status"] !== 1) {
+
+            throw new \Slim\Exception\NotFoundException($request, $response);
+
         }
 
         if($filmInfo["sale_unlock"] !== 0 && $filmInfo["sale_unlock"] > time()) {
@@ -22,7 +22,11 @@ $app->group("/film", function(){
         } else {
 
             // Get showtimes for film
-            $showtimes = $cinema->getShowtimes($filmId);
+            $showtimes = $cinema->getShowtimes($filmId, array(
+                "activeFilms" => true,
+                "activeShowings" => true,
+                "online_sales" => false
+            ));
 
             $filmInfo["showtimes"] = $showtimes;
 
