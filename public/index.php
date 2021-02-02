@@ -17,6 +17,7 @@ include "../routes/manage.php";
 include "../routes/auth.php";
 include "../routes/payments.php";
 include "../routes/settings.php";
+include "../routes/crons.php";
 ///////////////////
 
 // LANDING PAGE //
@@ -28,6 +29,7 @@ $app->get('/', function (Request $request, Response $response, array $args) {
     $r = $cinema->getShowtimes(false, array(
         "activeFilms" => true,
         "activeShowings" => true,
+        "online_sales" => true
     ));
 
     // If there are no showtimes, return a default message.
