@@ -239,6 +239,8 @@ class Stepper {
 
             if(a === false) {
 
+                stepper.scrollToElement("#stepsContainer");
+
                 return;
 
             } else {
@@ -487,6 +489,14 @@ class Stepper {
         this.buildSteps();
 
         return this.steps;
+
+    };
+
+    scrollToElement(element) {
+
+        $('html, body').animate({
+            scrollTop: $(element).offset().top
+        }, 1000);
 
     };
 
