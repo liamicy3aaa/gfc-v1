@@ -109,7 +109,9 @@ class cinema {
 
             } else {
 
-                $trailerBtn = "<a class='btn btn-light' href='/film/" . cipher::encrypt($data["id"]) . "' style='border-radius:20px; text-shadow:none;'>BOOK NOW</a>";
+                $text = ((time () > $data["sale_unlock"]) ? "READ MORE" : "BOOK NOW");
+
+                $trailerBtn = "<a class='btn btn-light' href='/film/" . cipher::encrypt($data["id"]) . "' style='border-radius:20px; text-shadow:none;'>$text</a>";
 
             }
 
@@ -1600,7 +1602,8 @@ class cinema {
         if(empty($settings)){
             $settings = array(
                 "includeData" => true,
-                "activeOnly" => true
+                "activeOnly" => true,
+                "online_sales" => true
             );
         }
         
@@ -1608,10 +1611,12 @@ class cinema {
         
         $columns = (($settings["includeData"]) ? "*" : "count(id) as 'total'");
         $active = (($settings["activeOnly"]) ? "AND status = 'active'" : "");
+        $onlineSales = ((isset($settings["online_sales"]) && $settings["online_sales"] === true) ? "AND online_sales = 1" : "");
 
+        // Running query.
+        $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE screen_id = ? AND time >= ? $active $onlineSales ORDER BY time ASC", $screenId, $time);
 
-        $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE screen_id = ? AND time >= ? $active ORDER BY time ASC", $screenId, $time);
-        
+        // Checking if we specified whether we want to receive all the data.
         if($settings["includeData"]) {
             
             return $query->fetchAll();
@@ -1639,15 +1644,16 @@ class cinema {
         
         $columns = (($settings["includeData"]) ? "*" : "count(id) as 'total'");
         $onlyActive = ((!isset($settings["onlyActive"]) || $settings["onlyActive"] === true) ? " AND status = 'active'" : "");
+        $onlineSales = ((isset($settings["online_sales"]) && $settings["online_sales"] === true) ? "AND online_sales = 1" : "");
 
         // Checking if we want all showings or only those that are in the future.
         if($settings["status"] == "all") {
 
-            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? $onlyActive ORDER BY time ASC", $filmId);
+            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? $onlyActive $onlineSales ORDER BY time ASC", $filmId);
 
         } else {
 
-            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? AND time >= ? $onlyActive ORDER BY time ASC", $filmId, $time);
+            $query = $this->conn->query("SELECT $columns FROM gfc_films_showtimes WHERE film_id = ? AND time >= ? $onlyActive $onlineSales ORDER BY time ASC", $filmId, $time);
 
         }
 
@@ -1688,18 +1694,19 @@ class cinema {
         $limit = ((isset($settings["limit"]) && $settings["limit"] !== false) ? " LIMIT " . $settings["limit"] . "" : "");
         $activeFilms = ((isset($settings["activeFilms"]) && $settings["activeFilms"] === true) ? "AND b.film_status = 1" : "");
         $activeShowings = ((isset($settings["activeShowings"]) && $settings["activeShowings"] === true) ? "AND a.status = 'active'" : "");
-        
+        $onlineSales = ((isset($settings["online_sales"]) && $settings["online_sales"] === true) ? "AND online_sales = 1" : "");
+
         // Checking if an id was provided.
         if($id !== false) {
             
             // List show times for a specific film
-            return $this->conn->query("SELECT a.* FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.film_id = ? AND a.time > ? $activeFilms $activeShowings ORDER BY time ASC $limit", $id, $time)->fetchAll();
+            return $this->conn->query("SELECT a.* FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.film_id = ? AND a.time > ? $activeFilms $activeShowings $onlineSales ORDER BY time ASC $limit", $id, $time)->fetchAll();
             
         } else {
             
             // List all available showtimes by film id
             
-            $times = $this->conn->query("SELECT a.id, a.film_id, a.date, a.time FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.`time` > ? $activeFilms $activeShowings ORDER BY time ASC $limit", $time)->fetchAll();
+            $times = $this->conn->query("SELECT a.id, a.film_id, a.date, a.time FROM gfc_films_showtimes as a INNER JOIN gfc_films as b ON a.film_id = b.id WHERE a.`time` > ? $activeFilms $activeShowings $onlineSales ORDER BY time ASC $limit", $time)->fetchAll();
             
             $data = array();
             $filmIds = array();
