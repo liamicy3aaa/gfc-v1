@@ -1,35 +1,57 @@
         <form id="newShowing" action="/Manage/ajax/films/{filmId}/addShowing" method="POST">
-            <div class="row">
-                <div class="col">
+            <ul class="nav nav-pills nav-justified mb-4">
+                <li class="nav-item">
+                    <a class="nav-link active" data-toggle="pill" href="#details">Details</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="pill" href="#options">Options</a>
+                </li>
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content" style="min-height:320px;">
+                <div class="tab-pane container active" id="details">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="showDate">Show date</label>
+                                <input name="showDate" id="showDate" type="text" class="form-control" placeholder="Select date" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="showTime">Show time</label>
+                                <input name="showTime" id="showTime" type="text" class="form-control" placeholder="Select time" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mb-2">
+                    <label for="screenSelect">Screen</label>
+                    <select id="screenSelect" class="screenSelect" name="screenSelection">
+                        {screens}
+                    </select>
+                    </div>
+                    <div class="form-group mb-2">
+                    <label for="ticketSelect">Available ticket options</label>
+                    <select id="ticketSelect" class="ticketSelect" multiple name="ticketSelection[]">
+                        {ticketTypes}
+                    </select>
+                    </div>
                     <div class="form-group">
-                        <label for="showDate">Show date</label>
-                        <input name="showDate" id="showDate" type="text" class="form-control" placeholder="Select date" autocomplete="off">
+                    <label for="special">Special Requirements</label>
+                        <textarea id="special" class="form-control" name="requirements"></textarea>
                     </div>
                 </div>
-                <div class="col">
-                    <div class="form-group">
-                        <label for="showTime">Show time</label>
-                        <input name="showTime" id="showTime" type="text" class="form-control" placeholder="Select time" autocomplete="off">
+                <div class="tab-pane container" id="options">
+                    <h6>Options</h6>
+                    <hr/>
+                    <div class="custom-control custom-switch">
+                        <input name="sellOnline" type="checkbox" class="custom-control-input" id="inputTicketActive" checked="checked" value="1">
+                        <label class="custom-control-label" for="inputTicketActive">Sell tickets online</label>
                     </div>
                 </div>
             </div>
-            <div class="form-group mb-2">
-            <label for="screenSelect">Screen</label>
-            <select id="screenSelect" class="screenSelect" name="screenSelection">
-                {screens}
-            </select>
-            </div>
-            <div class="form-group mb-2">
-            <label for="ticketSelect">Available ticket options</label>
-            <select id="ticketSelect" class="ticketSelect" multiple name="ticketSelection[]">
-                {ticketTypes}
-            </select>
-            </div>
-            <div class="form-group">
-            <label for="special">Special Requirements</label>
-                <textarea id="special" class="form-control" name="requirements"></textarea>
-            </div>
-            <button type="button" onclick="Cinema.submitAddShowing()" id="newShowSubmit" class="btn btn-success btn">Add</button>
+            <hr/>
+            <button type="button" onclick="Cinema.submitAddShowing()" id="newShowSubmit" class="btn btn-success btn-block">Create showing</button>
         </form>
         <script>$('#showDate').datepicker({
             startView: 2,

@@ -1,37 +1,62 @@
-<form action="/Manage/ajax/tickets/new" method="POST">
-    <div class="form-group">
-    <label for="inputTicketLabel">Ticket Label</label>
-    <input type="text" name="ticketLabel" class="form-control" id="inputTicketLabel" placeholder="Enter ticket label">
-  </div>
-    <div class="form-group">
-        <label for="inputTicketCost">Cost</label>
-        <input type="number" name="ticketCost" class="form-control" id="inputTicketCost" placeholder="Cost">
+<form id="newTicketForm" action="/Manage/ajax/tickets/new" method="POST" class="needs-validation" novalidate>
+    <!-- Nav pills -->
+    <ul class="nav nav-pills nav-justified mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="pill" href="#home">Details</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="pill" href="#menu1">Options</a>
+        </li>
+    </ul>
+    <!-- Tab panes -->
+    <div class="tab-content" style="min-height:214px;">
+        <div class="tab-pane container active" id="home">
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="inputTicketLabel">Ticket Label</label>
+                        <input type="text" name="ticketLabel" class="form-control" id="inputTicketLabel" placeholder="Enter ticket label" required>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <div class="form-group">
+                        <label for="inputTicketCost">Cost</label>
+                        <input type="number" name="ticketCost" class="form-control" id="inputTicketCost" placeholder="Cost" required>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="form-group">
+                        <label for="inputTicketSeats">Number of seats</label>
+                        <input type="number" min="1" name="ticketSeats" class="form-control" id="inputTicketSeats" placeholder="number of seats" required>
+                        <small class="form-text text-muted">The number of seats this ticket covers.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane container fade" id="menu1">
+            <h6>Options</h6>
+            <div class="custom-control custom-checkbox">
+                <input name="ticketProof" type="checkbox" class="custom-control-input" id="inputTicketProof" value="1">
+                <label class="custom-control-label" for="inputTicketProof">Proof required</label>
+            </div>
+            <div class="custom-control custom-checkbox">
+                <input name="ticketCeaFree" type="checkbox" class="custom-control-input" id="inputTicketCeaFree" value="1">
+                <label class="custom-control-label" for="inputTicketCeaFree">CEA FREE</label>
+            </div>
+            <div class="custom-control custom-checkbox">
+                <input name="ticketCeaFull" type="checkbox" class="custom-control-input" id="inputTicketCeaFull" value="1">
+                <label class="custom-control-label" for="inputTicketCeaFull">CEA FULL</label>
+            </div>
+            <hr/>
+            <h6>Status</h6>
+            <div class="custom-control custom-switch">
+                <input name="ticketActive" type="checkbox" class="custom-control-input" id="inputTicketActive" checked="checked" value="1">
+                <label class="custom-control-label" for="inputTicketActive">Active</label>
+            </div>
+        </div>
     </div>
-    <div class="form-group">
-        <label for="inputTicketSeats">Number of seats</label>
-        <input type="number" min="1" name="ticketSeats" class="form-control" id="inputTicketSeats" placeholder="number of seats">
-        <small class="form-text text-muted">The number of seats this ticket covers.</small>
-    </div>
-    <hr/>
-    <h6>Options</h6>
-    <div class="custom-control custom-checkbox">
-        <input name="ticketProof" type="checkbox" class="custom-control-input" id="inputTicketProof" value="1">
-        <label class="custom-control-label" for="inputTicketProof">Proof required</label>
-    </div>
-    <div class="custom-control custom-checkbox">
-        <input name="ticketCeaFree" type="checkbox" class="custom-control-input" id="inputTicketCeaFree" value="1">
-        <label class="custom-control-label" for="inputTicketCeaFree">CEA FREE</label>
-    </div>
-    <div class="custom-control custom-checkbox">
-        <input name="ticketCeaFull" type="checkbox" class="custom-control-input" id="inputTicketCeaFull" value="1">
-        <label class="custom-control-label" for="inputTicketCeaFull">CEA FULL</label>
-    </div>
-    <hr/>
-    <h6>Status</h6>
-    <div class="custom-control custom-switch">
-        <input name="ticketActive" type="checkbox" class="custom-control-input" id="inputTicketActive" value="1">
-        <label class="custom-control-label" for="inputTicketActive">Active</label>
-    </div>
-    <hr/>
-  <button type="button" id="newTicketSubmit" class="btn btn-primary btn-block">Create</button>
+    <hr class="mt-0" />
+  <button type="submit" id="newTicketSubmit" class="btn btn-primary btn-block">Create Ticket</button>
 </form>
